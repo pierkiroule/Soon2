@@ -47,22 +47,22 @@
 
     <section id="experienceModeView" class="view hidden-view">
         <div class="mode-flow-card">
-            <h2>Choisis ta traversée</h2>
-            <p>Avant d’entrer dans l’océan, choisis une expérience solo ou multi.</p>
+            <h2>Choisis ton rôle Soon</h2>
+            <p>Avant d’entrer dans l’océan, choisis une traversée solo ou le mode hôte / visiteur.</p>
             <div class="mode-flow-actions">
                 <button id="selectSoloModeBtn" class="immersion-btn" type="button">Traversée solo</button>
-                <button id="selectMultiModeBtn" class="immersion-btn" type="button">Traversée multi</button>
+                <button id="selectMultiModeBtn" class="immersion-btn" type="button">Mode hôte / visiteur</button>
             </div>
             <div id="multiRoomComposer" class="multi-room-composer hidden-view">
-                <p>Créer une room dédiée et indépendante pour une session multi robuste.</p>
-                <button id="createMultiRoomBtn" class="immersion-btn" type="button">Créer ma room multi</button>
+                <p>Tu es hôte : crée ta room, partage le lien, puis accueille les visiteurs.</p>
+                <button id="createMultiRoomBtn" class="immersion-btn" type="button">Créer ma room hôte</button>
                 <p id="multiRoomLinkOutput" class="multi-room-link" aria-live="polite"></p>
                 <div class="mode-flow-actions">
                     <button id="copyMultiRoomLinkBtn" class="immersion-btn" type="button" disabled>Copier le lien</button>
-                    <button id="toggleRoomAccessBtn" class="immersion-btn" type="button" disabled>Fermer l'accès invités</button>
-                    <button id="enterMultiRoomBtn" class="immersion-btn" type="button" disabled>Entrer dans ma room (admin)</button>
+                    <button id="toggleRoomAccessBtn" class="immersion-btn" type="button" disabled>Fermer l'accès visiteurs</button>
+                    <button id="enterMultiRoomBtn" class="immersion-btn" type="button" disabled>Entrer dans ma room (hôte)</button>
                 </div>
-                <p id="multiRoomAdminHint" class="multi-room-link">Le créateur est admin : il ouvre/ferme l'accès et valide les invités.</p>
+                <p id="multiRoomAdminHint" class="multi-room-link">L’hôte pilote la room : ouverture/fermeture des accès et attribution des rôles visiteurs.</p>
             </div>
         </div>
     </section>
@@ -70,12 +70,12 @@
     <section id="experienceView" class="view hidden-view">
         <div id="guestEntryModal" class="soon-modal" hidden>
             <div class="soon-modal__content">
-                <h3>Rejoindre la room</h3>
-                <p>Entrez votre pseudo pour rejoindre la room</p>
+                <h3>Rejoindre en visiteur</h3>
+                <p>Entrez votre pseudo pour rejoindre la room de l’hôte</p>
                 <p class="muted">Aucun compte requis.</p>
                 <input id="guestPseudoInput" type="text" placeholder="Votre pseudo" maxlength="24" />
                 <p id="guestPseudoError" class="muted"></p>
-                <button id="guestEnterRoomBtn" class="immersion-btn" type="button">Entrer dans la room</button>
+                <button id="guestEnterRoomBtn" class="immersion-btn" type="button">Entrer comme visiteur</button>
             </div>
         </div>
         <div id="ui"></div>
