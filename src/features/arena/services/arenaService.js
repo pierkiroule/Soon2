@@ -1,4 +1,4 @@
-import { generateRoomSlug, normalizeRoomSlug } from '../utils/roomLink.js';
+import { buildRoomUrl, generateRoomSlug, normalizeRoomSlug } from '../utils/roomLink.js';
 import { dbBubbleToRuntimeBubble, runtimeBubbleToDbInsert, runtimeBubbleToDbPatch } from '../utils/arenaMappers.js';
 
 const fail = (message, details = null) => ({ data: null, error: { message, details } });
@@ -8,7 +8,7 @@ export async function getArenaByRoomSlug({ supabase, roomSlug }) {
   const code = normalizeRoomSlug(roomSlug);
   if (!supabase) return fail('Multiutilisateur indisponible : connexion Supabase requise.');
   if (!code) return fail('Arène introuvable');
-  const { data, error } = await supabase.from('arenas').select('*').eq('invite_code', code).eq('is_active', true).maybeSingle();
+  const { data, error } = await supabase.from('arenas').select('*').eq('invite_code', code).eq('is_active', true).eq('status', 'published').maybeSingle();
   if (error) return fail(error.message, error);
   if (!data) return fail('Arène introuvable');
   return ok(data);
@@ -24,7 +24,7 @@ export async function createHostArena({ supabase, userId, title }) {
   if (!userId) return fail('Connexion requise');
   for (let i = 0; i < 5; i += 1) {
     const invite_code = generateRoomSlug();
-    const { data, error } = await supabase.from('arenas').insert({ owner_id: userId, invite_code, title: title || 'Mon arène', status: 'waiting', is_active: true }).select('*').single();
+    const { data, error } = await supabase.from('arenas').insert({ owner_id: userId, invite_code, title: title || 'Mon arène sonore', status: 'draft', is_active: true }).select('*').single();
     if (error?.code === '23505') continue;
     if (error) return fail(error.message, error);
     await touchParticipant({ supabase, arenaId: data.id, userId, role: 'host' });
@@ -42,6 +42,49 @@ export async function joinArenaByCode({ supabase, userId, inviteCode }) {
   const touch = await touchParticipant({ supabase, arenaId: arenaRes.data.id, userId, role: 'participant' });
   if (touch.error) return touch;
   return ok(arenaRes.data);
+}
+
+export async function getOrCreateHostArena({ supabase, userId }) {
+  if (!supabase) return fail('Connexion requise pour accéder à votre arène.');
+  if (!userId) return fail('Connexion requise pour accéder à votre arène.');
+  const { data: existing, error: lookupError } = await supabase
+    .from('arenas')
+    .select('*')
+    .eq('owner_id', userId)
+    .neq('status', 'archived')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (lookupError) return fail(lookupError.message, lookupError);
+  if (existing) return ok(existing);
+  return createHostArena({ supabase, userId, title: 'Mon arène sonore' });
+}
+
+export async function publishHostArena({ supabase, userId, origin }) {
+  const ensured = await getOrCreateHostArena({ supabase, userId });
+  if (ensured.error) return ensured;
+  const arena = ensured.data;
+  const inviteCode = normalizeRoomSlug(arena.invite_code || generateRoomSlug());
+  const patch = { invite_code: inviteCode, status: 'published', is_active: true, published_at: new Date().toISOString() };
+  const { data, error } = await supabase.from('arenas').update(patch).eq('id', arena.id).select('*').single();
+  if (error) return fail(error.message, error);
+  const visitUrl = buildRoomUrl({ origin: origin || window.location.origin, roomSlug: inviteCode });
+  return ok({ arena: data, visitUrl });
+}
+
+export async function loadPublicArenaByCode({ supabase, roomSlug }) {
+  const code = normalizeRoomSlug(roomSlug);
+  if (!supabase || !code) return fail('Aucune arène publiée ne correspond à ce lien.');
+  const { data, error } = await supabase
+    .from('arenas')
+    .select('*')
+    .eq('invite_code', code)
+    .eq('status', 'published')
+    .eq('is_active', true)
+    .maybeSingle();
+  if (error) return fail(error.message, error);
+  if (!data) return fail('Aucune arène publiée ne correspond à ce lien.');
+  return ok(data);
 }
 export async function joinRoomAsGuest({ supabase, roomSlug, guestIdentity, pseudo }) {
   if (!supabase) return fail('Multiutilisateur indisponible : connexion Supabase requise.');

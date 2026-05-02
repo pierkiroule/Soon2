@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { normalizeInviteCode, generateInviteCode } from '../src/features/arena/utils/inviteCode.js';
 import { normalizeRoomSlug, generateRoomSlug, buildRoomUrl, extractRoomSlugFromUrl } from '../src/features/arena/utils/roomLink.js';
 import { dbBubbleToRuntimeBubble, runtimeBubbleToDbInsert, runtimeBubbleToDbPatch } from '../src/features/arena/utils/arenaMappers.js';
-import { joinArenaByCode, updateArenaGuestRole } from '../src/features/arena/services/arenaService.js';
+import { getOrCreateHostArena, joinArenaByCode, loadPublicArenaByCode, publishHostArena, updateArenaGuestRole } from '../src/features/arena/services/arenaService.js';
 import { normalizeGuestPseudo, validateGuestPseudo, saveGuestPseudo, getStoredGuestPseudo } from '../src/features/arena/utils/guestIdentity.js';
 
 test('normalizeInviteCode', () => {
@@ -65,4 +65,68 @@ test('save/get guest pseudo by roomSlug', () => {
   };
   saveGuestPseudo({ roomSlug: 'roomslug123', pseudo: 'Pier' });
   assert.equal(getStoredGuestPseudo({ roomSlug: 'ROOMSLUG123' }), 'Pier');
+});
+
+test('getOrCreateHostArena returns existing arena', async () => {
+  const existing = { id: 'a1', owner_id: 'u1', invite_code: 'RMABC12', status: 'draft', is_active: true };
+  const supabase = {
+    from() {
+      return {
+        select() { return this; }, eq() { return this; }, neq() { return this; }, order() { return this; }, limit() { return this; },
+        async maybeSingle() { return { data: existing, error: null }; },
+      };
+    },
+  };
+  const res = await getOrCreateHostArena({ supabase, userId: 'u1' });
+  assert.equal(res.error, null);
+  assert.equal(res.data.id, 'a1');
+});
+
+test('getOrCreateHostArena creates arena if missing', async () => {
+  let inserted = false;
+  const supabase = {
+    from(table) {
+      if (table === 'arenas') {
+        return {
+          select() { return this; }, eq() { return this; }, neq() { return this; }, order() { return this; }, limit() { return this; },
+          async maybeSingle() { return { data: null, error: null }; },
+          insert() { inserted = true; return this; }, single() { return Promise.resolve({ data: { id: 'a2', invite_code: 'RMNEW12', status: 'draft' }, error: null }); },
+        };
+      }
+      return { upsert: async () => ({ error: null }) };
+    },
+  };
+  const res = await getOrCreateHostArena({ supabase, userId: 'u2' });
+  assert.equal(inserted, true);
+  assert.equal(res.error, null);
+  assert.equal(res.data.id, 'a2');
+});
+
+test('publishHostArena returns visitor link', async () => {
+  const supabase = {
+    from() {
+      return {
+        select() { return this; }, eq() { return this; }, neq() { return this; }, order() { return this; }, limit() { return this; },
+        async maybeSingle() { return { data: { id: 'a1', owner_id: 'u1', invite_code: 'RMABC12', status: 'draft', is_active: true }, error: null }; },
+        update() { return this; }, single() { return Promise.resolve({ data: { id: 'a1', invite_code: 'RMABC12', status: 'published' }, error: null }); },
+      };
+    },
+  };
+  const res = await publishHostArena({ supabase, userId: 'u1', origin: 'https://example.com/app' });
+  assert.equal(res.error, null);
+  assert.equal(res.data.visitUrl, 'https://example.com/app?room=RMABC2');
+});
+
+test('loadPublicArenaByCode only loads published arena', async () => {
+  const publishedSupabase = {
+    from() {
+      return {
+        select() { return this; }, eq() { return this; },
+        async maybeSingle() { return { data: { id: 'p1', status: 'published' }, error: null }; },
+      };
+    },
+  };
+  const okRes = await loadPublicArenaByCode({ supabase: publishedSupabase, roomSlug: 'RMXYZ12' });
+  assert.equal(okRes.error, null);
+  assert.equal(okRes.data.id, 'p1');
 });
