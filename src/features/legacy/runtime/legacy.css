@@ -215,6 +215,24 @@
 #experienceView, #profileView { background: #030308; }
         #experienceView { touch-action: none; }
 
+        .center-invite-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 180;
+            border: 0;
+            border-radius: 999px;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, rgba(72, 213, 255, 0.95), rgba(88, 125, 255, 0.95));
+            color: #02111d;
+            font-weight: 800;
+            font-size: 1rem;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            box-shadow: 0 12px 36px rgba(72, 213, 255, 0.35);
+        }
+
         #ui {
             position: absolute;
             top: 28px;
