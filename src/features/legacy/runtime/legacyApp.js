@@ -1100,7 +1100,7 @@ export function initLegacyApp() {
               pendingMultiRoomArenaId = null;
               isPendingMultiRoomClosed = false;
               if (copyMultiRoomLinkBtn) copyMultiRoomLinkBtn.disabled = true;
-              if (toggleRoomAccessBtn) { toggleRoomAccessBtn.disabled = true; toggleRoomAccessBtn.textContent = "Fermer l'accès invités"; }
+              if (toggleRoomAccessBtn) { toggleRoomAccessBtn.disabled = true; toggleRoomAccessBtn.textContent = "Fermer l'accès visiteurs"; }
               if (enterMultiRoomBtn) enterMultiRoomBtn.disabled = true;
               showView('mode-select');
               return true;
@@ -1254,12 +1254,12 @@ export function initLegacyApp() {
               pendingMultiRoomArenaId = arenaId;
               pendingMultiRoomInviteLink = buildRoomUrl({ origin: window.location.origin, roomSlug: inviteCode });
               if (multiRoomLinkOutput) {
-                  multiRoomLinkOutput.textContent = `Lien room admin: ${pendingMultiRoomInviteLink}`;
+                  multiRoomLinkOutput.textContent = `Lien hôte à partager: ${pendingMultiRoomInviteLink}`;
               }
               if (copyMultiRoomLinkBtn) copyMultiRoomLinkBtn.disabled = false;
               if (toggleRoomAccessBtn) toggleRoomAccessBtn.disabled = false;
               if (enterMultiRoomBtn) enterMultiRoomBtn.disabled = false;
-              setArenaSessionStatus('Room prête ✅ Partage le lien, puis ouvre la session quand tu veux.');
+              setArenaSessionStatus('Room hôte prête ✅ Partage le lien avec tes visiteurs, puis ouvre la session.');
           });
 
           bindTap(copyMultiRoomLinkBtn, async () => {
@@ -1280,9 +1280,9 @@ export function initLegacyApp() {
                   await client.from('arenas').update({ is_closed: isPendingMultiRoomClosed }).eq('id', pendingMultiRoomArenaId);
               }
               if (toggleRoomAccessBtn) {
-                  toggleRoomAccessBtn.textContent = isPendingMultiRoomClosed ? "Ouvrir l'accès invités" : "Fermer l'accès invités";
+                  toggleRoomAccessBtn.textContent = isPendingMultiRoomClosed ? "Ouvrir l'accès visiteurs" : "Fermer l'accès visiteurs";
               }
-              setArenaSessionStatus(isPendingMultiRoomClosed ? 'Accès invités fermé par l’admin.' : 'Accès invités ouvert par l’admin.');
+              setArenaSessionStatus(isPendingMultiRoomClosed ? 'Accès visiteurs fermé par l’hôte.' : 'Accès visiteurs ouvert par l’hôte.');
           });
 
           bindTap(enterMultiRoomBtn, () => {
@@ -1397,7 +1397,8 @@ export function initLegacyApp() {
               const participantCount = Math.max(1, Number.isFinite(currentArenaParticipants) ? Math.round(currentArenaParticipants) : 1);
               const participantLabel = participantCount > 1 ? 'participants' : 'participant';
               const syncLabel = isLocalOnlyMode ? ' · Mode local (non synchronisé)' : '';
-              arenaSessionBadge.textContent = `Arène partagée: ${arenaLabel} · ${participantCount} ${participantLabel}${syncLabel}`;
+              const roleLabel = currentArenaRole === 'host' ? 'hôte' : 'visiteur';
+              arenaSessionBadge.textContent = `Arène Soon (${roleLabel}) : ${arenaLabel} · ${participantCount} ${participantLabel}${syncLabel}`;
           }
 
           function canHostEditBubbles() {
@@ -1405,7 +1406,7 @@ export function initLegacyApp() {
           }
 
           function notifyGuestReadOnlyMode() {
-              if (!canHostEditBubbles()) setArenaSessionStatus('Mode invité : lecture seule.', true);
+              if (!canHostEditBubbles()) setArenaSessionStatus('Mode visiteur : lecture seule.', true);
           }
 
           function isArenaPermissionDeniedError(error) {
@@ -2734,7 +2735,7 @@ export function initLegacyApp() {
           async function restoreSession() {
               if (isInviteGuestMode) {
                   currentSession = null;
-                  refreshAuthUi('Mode invité actif.');
+                  refreshAuthUi('Mode visiteur actif.');
                   return;
               }
               const client = buildSupabaseClient();
@@ -2867,7 +2868,7 @@ export function initLegacyApp() {
                   if (typeof joinedArenaId === 'string') {
                       setCurrentArena(joinedArenaId, inviteCodeFromUrl).catch(() => {});
                   }
-                  setArenaSessionStatus(`Invitation détectée ✅ Entrée directe dans la room ${inviteCodeFromUrl}.`);
+                  setArenaSessionStatus(`Invitation détectée ✅ Entrée visiteur dans la room ${inviteCodeFromUrl}.`);
                   showView('experience');
                   ensureAllAudioRunning();
               });
