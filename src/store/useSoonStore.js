@@ -283,12 +283,23 @@ export const useSoonStore = create((set, get) => ({
   startCircuitAutopilot: () => {
     const state = get();
 
-    if (!state.traceCircuit || state.traceCircuit.length < 2) return;
+    let circuit = Array.isArray(state.traceCircuit) ? state.traceCircuit : [];
 
-    const first = state.traceCircuit[0];
+    if (circuit.length < 2) {
+      circuit = createSlalomCircuitFromBubbles(state.bubbles || []);
+    }
+
+    if (!circuit || circuit.length < 2) {
+      circuit = createDefaultTraceCircuit();
+    }
+
+    if (!circuit || circuit.length < 2) return;
+
+    const first = circuit[0];
 
     set((state) => ({
       mode: "reso",
+      traceCircuit: circuit,
       circuitAutopilot: true,
       circuitSegmentIndex: 0,
       circuitSegmentT: 0,
@@ -301,6 +312,8 @@ export const useSoonStore = create((set, get) => ({
         depth: first.depth || 1,
       },
     }));
+
+    saveState(get());
   },
 
   stopCircuitAutopilot: () => {
