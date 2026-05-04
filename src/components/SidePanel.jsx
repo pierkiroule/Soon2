@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { SOON_MODES } from "../core/soonModes.js";
 import BubbleEditor from "./BubbleEditor.jsx";
 
@@ -18,6 +18,12 @@ export default function SidePanel({
 }) {
   const [open, setOpen] = useState(false);
   const currentMode = SOON_MODES.find((item) => item.id === mode);
+
+  useEffect(() => {
+    if (selectedBubble || selectedFish) {
+      setOpen(true);
+    }
+  }, [selectedBubble?.id, selectedFish]);
 
   if (mode === "intro") return null;
 
@@ -58,21 +64,41 @@ export default function SidePanel({
 
 
           {selectedFish && (
-            <section className="help-card compact-help">
+            <section className="help-card compact-help depth-editor">
               <p>Poisson-plume sélectionné</p>
 
               <label>
-                Profondeur
-                <select
+                Profondeur · P{selectedFish.depth || 1}
+                <input
+                  type="range"
+                  min="1"
+                  max="3"
+                  step="1"
                   value={selectedFish.depth || 1}
                   onChange={(event) =>
                     onUpdateFishDepth(Number(event.target.value))
                   }
-                >
-                  <option value={1}>1 · surface</option>
-                  <option value={2}>2 · milieu</option>
-                  <option value={3}>3 · profondeur</option>
-                </select>
+                />
+              </label>
+            </section>
+          )}
+
+          {mode === "compo" && selectedBubble && (
+            <section className="help-card compact-help depth-editor">
+              <p>Profondeur de la bulle</p>
+
+              <label>
+                Profondeur · P{selectedBubble.depth || 1}
+                <input
+                  type="range"
+                  min="1"
+                  max="3"
+                  step="1"
+                  value={selectedBubble.depth || 1}
+                  onChange={(event) =>
+                    onUpdateBubble({ depth: Number(event.target.value) })
+                  }
+                />
               </label>
             </section>
           )}

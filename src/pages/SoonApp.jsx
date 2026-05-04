@@ -8,9 +8,8 @@ export default function SoonApp({ onBack }) {
   const [page, setPage] = useState("arena");
   const [viewZoom, setViewZoom] = useState(1);
   const [swimSpeed, setSwimSpeed] = useState(1);
-  const [depth, setDepth] = useState(1);
 
-  // "zoom" | "speed" | "depth" | null
+  // "zoom" | "speed" | null
   const [activeSlider, setActiveSlider] = useState(null);
 
   const {
@@ -87,9 +86,8 @@ export default function SoonApp({ onBack }) {
         path={path}
         eyesClosed={eyesClosed}
         viewZoom={viewZoom}
-        depth={depth}
         onFishTarget={setFishTarget}
-        onTickFish={() => tickFish({ swimSpeed, depth })}
+        onTickFish={() => tickFish({ swimSpeed })}
       />
 
       {/* COCKPIT */}
@@ -108,12 +106,6 @@ export default function SoonApp({ onBack }) {
             onClick={() => toggle("speed")}
             title="Vitesse"
           >⚡</button>
-
-          <button
-            className={`bubble-btn depth ${activeSlider==="depth"?"active":""}`}
-            onClick={() => toggle("depth")}
-            title="Profondeur"
-          >🌊</button>
         </div>
 
         {/* SLIDERS */}
@@ -144,20 +136,6 @@ export default function SoonApp({ onBack }) {
                 onChange={(e) => setSwimSpeed(Number(e.target.value))}
               />
               <span>Speed {swimSpeed.toFixed(1)}×</span>
-            </div>
-          )}
-
-          {activeSlider === "depth" && (
-            <div className="slider depth">
-              <input
-                type="range"
-                min="0.5"
-                max="2"
-                step="0.1"
-                value={depth}
-                onChange={(e) => setDepth(Number(e.target.value))}
-              />
-              <span>Depth {depth.toFixed(1)}</span>
             </div>
           )}
 

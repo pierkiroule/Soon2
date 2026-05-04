@@ -1790,3 +1790,16 @@ button {
   color: #7dd3fc;
 }
 
+
+.depth-editor label {
+  display: grid;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: rgba(248, 250, 252, 0.86);
+}
+
+.depth-editor input[type="range"] {
+  width: 100%;
+  accent-color: #34d399;
+}
+
