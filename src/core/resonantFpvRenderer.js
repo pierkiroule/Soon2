@@ -30,40 +30,78 @@ export function drawResonantFPV(ctx, rect, current, time) {
   const t = time * 0.001;
   const speed = Math.hypot(fish.vx || 0, fish.vy || 0);
   const speedNorm = clamp(speed / 18, 0, 1.35);
-  const pulse = 1 + speedNorm * 0.45 + Math.sin(t * 3.2) * 0.03;
   const fishDepth = clamp(fish.depth || 1, 1, 3);
+  const mouthPull = clamp(fish.mouthPull || 0, 0, 1);
+
+  // Audio-reactive proxy: quand l'audio explicite n'est pas présent,
+  // on injecte une rythmique basée sur speed/mouthPull + oscillateurs.
+  const lowBeat = Math.sin(t * (2.2 + speedNorm * 1.8)) * 0.5 + 0.5;
+  const midBeat = Math.sin(t * (5.8 + mouthPull * 3.6) + 1.4) * 0.5 + 0.5;
+  const highBeat = Math.sin(t * (11.2 + speedNorm * 3.4) + mouthPull * 6.2) * 0.5 + 0.5;
+  const audioEnergy = clamp(0.35 + speedNorm * 0.42 + mouthPull * 0.28 + lowBeat * 0.15, 0, 1.4);
+  const pulse = 1 + audioEnergy * 0.42 + midBeat * 0.08;
 
   const [r, g, b] = depthColor(fishDepth);
 
-  const bg = ctx.createRadialGradient(centerX, centerY, 20, centerX, centerY, Math.max(width, height) * 0.88);
-  bg.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.16)`);
-  bg.addColorStop(0.5, "rgba(6, 12, 28, 0.92)");
+  const bg = ctx.createRadialGradient(centerX, centerY, 20, centerX, centerY, Math.max(width, height) * 0.9);
+  bg.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${0.17 + audioEnergy * 0.05})`);
+  bg.addColorStop(0.4, "rgba(8, 12, 32, 0.88)");
   bg.addColorStop(1, "rgba(1, 4, 12, 1)");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
 
-  const tunnelRadius = Math.min(width, height) * (0.34 + speedNorm * 0.08);
-  for (let i = 0; i < 16; i += 1) {
-    const k = i / 15;
-    const z = 1 - k;
-    const ringR = tunnelRadius * (0.2 + z * (1 + speedNorm * 0.6));
-    const wobble = Math.sin(t * 0.8 + i * 0.55) * 8 * speedNorm;
+  const baseRadius = Math.min(width, height) * (0.28 + speedNorm * 0.08 + audioEnergy * 0.04);
+  const ringCount = 30;
+
+  // Anneaux 3D du tunnel (roller coaster): compression perspective + torsion.
+  for (let i = 0; i < ringCount; i += 1) {
+    const z = i / (ringCount - 1); // 0 proche, 1 lointain
+    const depth = Math.pow(1 - z, 1.55);
+    const travel = (t * (0.62 + speedNorm * 1.8 + audioEnergy * 1.2) + z * 1.9) % 1;
+    const radius = baseRadius * (0.16 + depth * (1.75 + lowBeat * 0.42));
+    const twist = t * (0.22 + audioEnergy * 0.45) + z * (1.6 + highBeat * 0.8);
+    const cork = Math.sin(twist * 1.5) * 36 * depth * (0.3 + audioEnergy * 0.8);
+    const lift = Math.cos(twist * 1.2) * 20 * depth * (0.35 + midBeat * 0.65);
+
+    const cx = centerX + cork;
+    const cy = centerY + lift - travel * height * 0.95;
+
     ctx.beginPath();
-    ctx.ellipse(centerX + wobble, centerY, ringR, ringR * 0.72, Math.sin(t * 0.15 + i) * 0.06, 0, TAU);
-    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.22 * (1 - k)})`;
-    ctx.lineWidth = 1 + (1 - k) * 1.4;
+    ctx.ellipse(
+      cx,
+      cy,
+      radius,
+      radius * (0.64 + midBeat * 0.14),
+      Math.sin(t * 0.34 + z * 4) * 0.28,
+      0,
+      TAU
+    );
+    const alpha = clamp(0.03 + depth * 0.3 + audioEnergy * 0.06, 0.03, 0.46);
+    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+    ctx.lineWidth = 0.8 + depth * (2.2 + lowBeat * 1.2);
     ctx.stroke();
   }
 
-  for (let i = 0; i < 20; i += 1) {
-    const a = (i / 20) * TAU + Math.sin(t * 0.4) * 0.2;
-    const len = tunnelRadius * (1 + speedNorm * 0.6);
+  // Parois particulaires audio-reactives.
+  const wallParticles = Math.floor(170 + speedNorm * 100 + audioEnergy * 70);
+  for (let i = 0; i < wallParticles; i += 1) {
+    const lane = i / wallParticles;
+    const theta = lane * TAU * 12 + t * (0.4 + highBeat * 1.7);
+    const axial = ((i * 13.37 + t * (220 + speedNorm * 330 + audioEnergy * 260)) % (height + 160)) - 80;
+    const radial = baseRadius * (0.56 + ((i * 17) % 100) / 100 * (1.1 + lowBeat * 0.9));
+    const wobble = Math.sin(t * 1.3 + i * 0.07) * 18 * midBeat;
+
+    const x = centerX + Math.cos(theta) * radial + wobble;
+    const y = centerY - axial + Math.sin(theta * 1.2) * 22;
+
+    const p = clamp((height - y + 120) / (height + 220), 0, 1);
+    const size = 0.5 + p * (1.8 + audioEnergy * 2.4);
+    const alpha = clamp(0.04 + p * 0.34 + highBeat * 0.08, 0.03, 0.52);
+
     ctx.beginPath();
-    ctx.moveTo(centerX + Math.cos(a) * 16, centerY + Math.sin(a) * 12);
-    ctx.lineTo(centerX + Math.cos(a) * len, centerY + Math.sin(a) * len * 0.72);
-    ctx.strokeStyle = `rgba(148, 210, 255, ${0.07 + speedNorm * 0.06})`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
+    ctx.arc(x, y, size, 0, TAU);
+    ctx.fillStyle = `rgba(${200 + Math.floor(30 * midBeat)}, ${230 + Math.floor(20 * highBeat)}, 255, ${alpha})`;
+    ctx.fill();
   }
 
   if (traceCircuit.length > 1) {
@@ -78,8 +116,9 @@ export function drawResonantFPV(ctx, rect, current, time) {
       }
     }
 
-    const lookAhead = Math.min(26, traceCircuit.length);
-    const perspective = Math.min(width, height) * 0.58;
+    const lookAhead = Math.min(36, traceCircuit.length);
+    const perspective = Math.min(width, height) * 0.64;
+
     ctx.beginPath();
     for (let step = 0; step < lookAhead; step += 1) {
       const index = (nearestIndex + step) % traceCircuit.length;
@@ -89,47 +128,28 @@ export function drawResonantFPV(ctx, rect, current, time) {
       const dist = Math.hypot(dx, dy);
       const relAngle = normalizeAngle(Math.atan2(dy, dx) - (fish.angle || 0));
       const front = Math.cos(relAngle);
-      if (front < -0.15) continue;
+      if (front < -0.18) continue;
 
-      const depthFactor = 1 / (1 + dist * 0.006);
+      const depthFactor = 1 / (1 + dist * 0.0056);
       const screenX = centerX + Math.sin(relAngle) * perspective * depthFactor;
-      const screenY = centerY - front * 90 * depthFactor + (p.depth - fishDepth) * 12;
+      const screenY = centerY - front * (120 + lowBeat * 20) * depthFactor + (p.depth - fishDepth) * 16;
 
       if (step === 0) ctx.moveTo(screenX, screenY);
       else ctx.lineTo(screenX, screenY);
 
-      const glow = 2 + depthFactor * 13;
+      const glow = 2 + depthFactor * (14 + audioEnergy * 8);
       ctx.beginPath();
-      ctx.arc(screenX, screenY, glow * 0.22, 0, TAU);
-      ctx.fillStyle = `rgba(236, 253, 255, ${0.28 + depthFactor * 0.45})`;
+      ctx.arc(screenX, screenY, glow * 0.2, 0, TAU);
+      ctx.fillStyle = `rgba(236, 253, 255, ${0.28 + depthFactor * 0.5 + highBeat * 0.08})`;
       ctx.fill();
     }
 
-    ctx.strokeStyle = `rgba(125, 211, 252, ${0.34 + speedNorm * 0.2})`;
-    ctx.lineWidth = 2.6 + speedNorm * 2.4;
-    ctx.shadowBlur = 22;
-    ctx.shadowColor = "rgba(56, 189, 248, 0.7)";
+    ctx.strokeStyle = `rgba(125, 211, 252, ${0.35 + speedNorm * 0.25 + audioEnergy * 0.18})`;
+    ctx.lineWidth = 2.4 + speedNorm * 2.8 + audioEnergy * 1.6;
+    ctx.shadowBlur = 20 + audioEnergy * 20;
+    ctx.shadowColor = "rgba(56, 189, 248, 0.72)";
     ctx.stroke();
     ctx.shadowBlur = 0;
-
-    for (let step = 2; step < Math.min(12, lookAhead); step += 2) {
-      const index = (nearestIndex + step) % traceCircuit.length;
-      const p = traceCircuit[index];
-      const dx = (p.x || 0) - (fish.x || 0);
-      const dy = (p.y || 0) - (fish.y || 0);
-      const dist = Math.hypot(dx, dy);
-      const relAngle = normalizeAngle(Math.atan2(dy, dx) - (fish.angle || 0));
-      const front = Math.cos(relAngle);
-      if (front < -0.2) continue;
-      const depthFactor = 1 / (1 + dist * 0.006);
-      const sx = centerX + Math.sin(relAngle) * perspective * depthFactor;
-      const sy = centerY - front * 90 * depthFactor + (p.depth - fishDepth) * 12;
-      const size = 1.4 + depthFactor * 10;
-      ctx.beginPath();
-      ctx.arc(sx, sy, size, 0, TAU);
-      ctx.fillStyle = `rgba(250, 245, 255, ${0.2 + depthFactor * 0.6})`;
-      ctx.fill();
-    }
   }
 
   const nearBubbles = bubbles
@@ -141,54 +161,26 @@ export function drawResonantFPV(ctx, rect, current, time) {
       const relativeAngle = normalizeAngle(angleToBubble - (fish.angle || 0));
       return { bubble, distance, relativeAngle };
     })
-    .filter((item) => item.distance < 720)
-    .slice(0, 40);
+    .filter((item) => item.distance < 760)
+    .slice(0, 52);
 
-  const densityBoost = nearBubbles.length > 0 ? 1.25 : 0.9;
   nearBubbles.forEach(({ bubble, distance, relativeAngle }) => {
     const front = Math.cos(relativeAngle);
     if (front < -0.2) return;
 
-    const perspective = Math.min(width, height) * 0.68;
-    const screenX = centerX + Math.sin(relativeAngle) * perspective * clamp(1 / (1 + distance * 0.008), 0.12, 1);
-    const screenY = centerY + (bubble.depth - fishDepth) * 36 + (1 - front) * 42;
-    const scale = clamp(220 / (distance + 120), 0.12, 1.5);
-    const alpha = clamp(0.48 * scale, 0.05, 0.55);
+    const perspective = Math.min(width, height) * 0.72;
+    const screenX = centerX + Math.sin(relativeAngle) * perspective * clamp(1 / (1 + distance * 0.0075), 0.12, 1);
+    const screenY = centerY + (bubble.depth - fishDepth) * 40 + (1 - front) * 46;
+    const scale = clamp(240 / (distance + 120), 0.1, 1.6);
+    const alpha = clamp(0.42 * scale + audioEnergy * 0.08, 0.06, 0.64);
     const [br, bgc, bb] = depthColor(bubble.depth || 1);
 
-    const halo = ctx.createRadialGradient(screenX, screenY, 2, screenX, screenY, 55 * scale * pulse);
+    const halo = ctx.createRadialGradient(screenX, screenY, 2, screenX, screenY, 58 * scale * pulse);
     halo.addColorStop(0, `rgba(${br}, ${bgc}, ${bb}, ${alpha})`);
     halo.addColorStop(1, `rgba(${br}, ${bgc}, ${bb}, 0)`);
     ctx.fillStyle = halo;
     ctx.beginPath();
-    ctx.arc(screenX, screenY, 55 * scale * pulse, 0, TAU);
+    ctx.arc(screenX, screenY, 58 * scale * pulse, 0, TAU);
     ctx.fill();
   });
-
-  const particleCount = Math.floor(24 * densityBoost + speedNorm * 26);
-  for (let i = 0; i < particleCount; i += 1) {
-    const px = (Math.sin(i * 91.7 + t * (1.3 + speedNorm * 1.8)) * 0.5 + 0.5) * width;
-    const py = (i * 53 + t * 90 * (1 + speedNorm * 2.4)) % (height + 40) - 20;
-    const pr = 0.8 + ((i * 7) % 3) * 0.8;
-    ctx.beginPath();
-    ctx.arc(px, py, pr, 0, TAU);
-    ctx.fillStyle = `rgba(186, 230, 253, ${0.08 + speedNorm * 0.18})`;
-    ctx.fill();
-  }
-
-  ctx.save();
-  ctx.globalAlpha = 0.18;
-  for (let i = 0; i < 8; i += 1) {
-    const y = (i / 8) * height;
-    ctx.beginPath();
-    for (let x = -20; x <= width + 20; x += 18) {
-      const wave = Math.sin(x * 0.03 + t * 0.9 + i * 0.7) * 5;
-      if (x === -20) ctx.moveTo(x, y + wave);
-      else ctx.lineTo(x, y + wave);
-    }
-    ctx.strokeStyle = `rgba(226, 232, 240, ${0.05 + i * 0.006})`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
-  ctx.restore();
 }
