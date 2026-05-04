@@ -31,6 +31,10 @@ export default function SoonApp({ onBack }) {
     selectFish,
     updateFishDepth,
     updateBubble,
+    updateBeacon,
+    startCircuitAutopilot,
+    stopCircuitAutopilot,
+    autoGenerateTraceCircuit,
   } = useSoonStore();
 
   useEffect(() => {
@@ -41,6 +45,8 @@ export default function SoonApp({ onBack }) {
 
   const selectedBubble =
     bubbles.find((bubble) => bubble.id === selectedBubbleId) || null;
+  const selectedBeacon =
+    traceCircuit.find((beacon) => beacon.id === selectedBeaconId) || null;
 
   const toggle = (key) =>
     setActiveSlider((cur) => (cur === key ? null : key));
@@ -162,6 +168,14 @@ export default function SoonApp({ onBack }) {
         mode={mode}
         selectedBubble={selectedBubble}
         selectedFish={selectedFish ? fish : null}
+        selectedBeacon={selectedBeacon}
+        circuitAutopilot={circuitAutopilot}
+        onUpdateBeacon={(patch) =>
+          selectedBeacon && updateBeacon(selectedBeacon.id, patch)
+        }
+        onStartCircuitAutopilot={startCircuitAutopilot}
+        onStopCircuitAutopilot={stopCircuitAutopilot}
+        onAutoGenerateTraceCircuit={autoGenerateTraceCircuit}
         onUpdateBubble={(patch) => selectedBubble && updateBubble(selectedBubble.id, patch)}
         onUpdateFishDepth={updateFishDepth}
       />
