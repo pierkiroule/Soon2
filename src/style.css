@@ -1716,6 +1716,15 @@ button {
 .bubble-btn.zoom { box-shadow: 0 0 12px rgba(56,189,248,0.6); }
 .bubble-btn.speed { box-shadow: 0 0 12px rgba(244,114,182,0.6); }
 .bubble-btn.depth { box-shadow: 0 0 12px rgba(52,211,153,0.6); }
+.bubble-btn.vision {
+  width: auto;
+  min-width: 90px;
+  border-radius: 999px;
+  padding: 0 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(129,140,248,0.45);
+}
 
 /* PANEL SLIDER */
 .slider-panel {
@@ -1802,4 +1811,3 @@ button {
   width: 100%;
   accent-color: #34d399;
 }
-
