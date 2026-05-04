@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SidePanel from "../components/SidePanel.jsx";
 import SoonCanvas from "../components/SoonCanvas.jsx";
 import Profile from "./Profile.jsx";
@@ -8,6 +8,13 @@ export default function SoonApp({ onBack }) {
   const [page, setPage] = useState("arena");
   const [viewZoom, setViewZoom] = useState(1);
   const [swimSpeed, setSwimSpeed] = useState(1);
+  const [fpvMode, setFpvMode] = useState(false);
+
+  useEffect(() => {
+    if (mode !== "reso" && fpvMode) {
+      setFpvMode(false);
+    }
+  }, [mode, fpvMode]);
 
   // "zoom" | "speed" | null
   const [activeSlider, setActiveSlider] = useState(null);
@@ -86,6 +93,7 @@ export default function SoonApp({ onBack }) {
         path={path}
         eyesClosed={eyesClosed}
         viewZoom={viewZoom}
+        fpvMode={fpvMode}
         onFishTarget={setFishTarget}
         onTickFish={() => tickFish({ swimSpeed })}
       />
@@ -95,6 +103,13 @@ export default function SoonApp({ onBack }) {
 
         {/* BOUTONS */}
         <div className="cockpit-buttons">
+          {mode === "reso" && (
+            <button
+              className={`bubble-btn vision ${fpvMode ? "active" : ""}`}
+              onClick={() => setFpvMode((value) => !value)}
+              title="Vision d’écailles"
+            >👁</button>
+          )}
           <button
             className={`bubble-btn zoom ${activeSlider==="zoom"?"active":""}`}
             onClick={() => toggle("zoom")}

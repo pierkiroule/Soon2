@@ -26,6 +26,7 @@ import {
 } from "../core/ecosystemFx.js";
 import { sampleSmoothCircuit } from "../core/traceCircuit.js";
 import { drawFishFx, updateFishFx } from "../core/fishFxEngine.js";
+import { drawResonantFPV } from "../core/resonantFpvRenderer.js";
 
 export default function SoonCanvas({
   mode,
@@ -40,6 +41,7 @@ export default function SoonCanvas({
   viewZoom,
   visualLight,
   depth,
+  fpvMode,
   onFishTarget,
   onTickFish,
   onSelectBubble,
@@ -99,8 +101,9 @@ export default function SoonCanvas({
       viewZoom,
       visualLight,
       depth,
+      fpvMode,
     };
-  }, [mode, bubbles, fish, selectedBubbleId, path, eyesClosed, viewZoom, visualLight, depth]);
+  }, [mode, bubbles, fish, selectedBubbleId, path, eyesClosed, viewZoom, visualLight, depth, fpvMode]);
 
   useEffect(() => {
     let frame = 0;
@@ -489,6 +492,12 @@ function findBubbleAt(point) {
 
   function draw(ctx, rect, time) {
     const current = stateRef.current;
+
+    if (current.mode === "reso" && current.fpvMode) {
+      drawResonantFPV(ctx, rect, current, time);
+      drawHud(ctx, rect, current);
+      return;
+    }
 
     drawOcean(ctx, rect, time); // diagnostic fond simple
     drawDepthVeil(ctx, rect, current.fish);
