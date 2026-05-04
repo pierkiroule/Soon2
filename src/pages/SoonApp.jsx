@@ -113,7 +113,8 @@ export default function SoonApp({ onBack }) {
             <button
               className={`bubble-btn vision ${fpvMode ? "active" : ""}`}
               onClick={() => setFpvMode((value) => !value)}
-              title="Vision d’écailles"
+              title="Synesthesia"
+              aria-label="Synesthesia"
             >👁</button>
           )}
           <button

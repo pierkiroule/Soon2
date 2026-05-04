@@ -1,194 +1,127 @@
+import { drawPoissonPlume } from "./poissonPlumeRenderer.js";
+
 const TAU = Math.PI * 2;
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-function normalizeAngle(angle) {
-  let a = angle;
-  while (a > Math.PI) a -= TAU;
-  while (a < -Math.PI) a += TAU;
-  return a;
-}
-
 function depthColor(depth = 1) {
-  if (depth >= 3) return [168, 85, 247];
-  if (depth >= 2) return [45, 212, 191];
-  return [56, 189, 248];
+  if (depth >= 3) return [172, 112, 245];
+  if (depth >= 2) return [82, 224, 206];
+  return [96, 186, 248];
 }
 
 export function drawResonantFPV(ctx, rect, current, time) {
   const width = rect?.width || ctx?.canvas?.width || 1;
   const height = rect?.height || ctx?.canvas?.height || 1;
   const centerX = width * 0.5;
-  const centerY = height * 0.52;
+  const centerY = height * 0.53;
 
   const fish = current?.fish || {};
-  const bubbles = Array.isArray(current?.bubbles) ? current.bubbles : [];
-  const traceCircuit = Array.isArray(current?.traceCircuit) ? current.traceCircuit : [];
 
   const t = time * 0.001;
   const speed = Math.hypot(fish.vx || 0, fish.vy || 0);
-  const speedNorm = clamp(speed / 18, 0, 1.35);
-  const pulse = 1 + speedNorm * 0.45 + Math.sin(t * 3.2) * 0.03;
+  const speedNorm = clamp(speed / 18, 0, 1.2);
+  const mouthPull = clamp(fish.mouthPull || 0, 0, 1);
   const fishDepth = clamp(fish.depth || 1, 1, 3);
 
+  const flow = clamp(0.2 + speedNorm * 0.4 + mouthPull * 0.25, 0, 1.2);
   const [r, g, b] = depthColor(fishDepth);
 
-  const bg = ctx.createRadialGradient(centerX, centerY, 20, centerX, centerY, Math.max(width, height) * 0.88);
-  bg.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.16)`);
-  bg.addColorStop(0.5, "rgba(6, 12, 28, 0.92)");
-  bg.addColorStop(1, "rgba(1, 4, 12, 1)");
+  // Fond doux sans motifs haute-fréquence (anti-moirage).
+  const bg = ctx.createRadialGradient(centerX, centerY, 20, centerX, centerY, Math.max(width, height) * 0.94);
+  bg.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${0.14 + flow * 0.04})`);
+  bg.addColorStop(0.45, "rgba(12, 14, 36, 0.96)");
+  bg.addColorStop(1, "rgba(4, 6, 18, 1)");
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
 
-  const tunnelRadius = Math.min(width, height) * (0.34 + speedNorm * 0.08);
-  for (let i = 0; i < 16; i += 1) {
-    const k = i / 15;
-    const z = 1 - k;
-    const ringR = tunnelRadius * (0.2 + z * (1 + speedNorm * 0.6));
-    const wobble = Math.sin(t * 0.8 + i * 0.55) * 8 * speedNorm;
-    ctx.beginPath();
-    ctx.ellipse(centerX + wobble, centerY, ringR, ringR * 0.72, Math.sin(t * 0.15 + i) * 0.06, 0, TAU);
-    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${0.22 * (1 - k)})`;
-    ctx.lineWidth = 1 + (1 - k) * 1.4;
-    ctx.stroke();
+  // Brumes boréales larges, sans tramage particulaire.
+  for (let i = 0; i < 5; i += 1) {
+    const p = i / 4;
+    const y = centerY + (p - 0.5) * height * 0.44 + Math.sin(t * 0.28 + i * 0.9) * (12 + flow * 5);
+    const band = 72 + i * 10;
+    const haze = ctx.createLinearGradient(0, y - band, width, y + band);
+    haze.addColorStop(0, "rgba(255,255,255,0)");
+    haze.addColorStop(0.3, `hsla(${190 + i * 8}, 86%, 74%, ${0.03 + flow * 0.03})`);
+    haze.addColorStop(0.7, `hsla(${258 + i * 7}, 86%, 75%, ${0.03 + flow * 0.03})`);
+    haze.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = haze;
+    ctx.fillRect(0, y - band, width, band * 2);
   }
 
-  for (let i = 0; i < 20; i += 1) {
-    const a = (i / 20) * TAU + Math.sin(t * 0.4) * 0.2;
-    const len = tunnelRadius * (1 + speedNorm * 0.6);
-    ctx.beginPath();
-    ctx.moveTo(centerX + Math.cos(a) * 16, centerY + Math.sin(a) * 12);
-    ctx.lineTo(centerX + Math.cos(a) * len, centerY + Math.sin(a) * len * 0.72);
-    ctx.strokeStyle = `rgba(148, 210, 255, ${0.07 + speedNorm * 0.06})`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
+  // Échos de contour du poisson (vaporeux), sans particules.
+  const bodyEchoCount = 5;
+  for (let i = 0; i < bodyEchoCount; i += 1) {
+    const k = i / Math.max(1, bodyEchoCount - 1);
+    ctx.save();
+    ctx.translate(centerX, centerY + Math.sin(t * 1.0) * 2.5);
+    ctx.rotate(fish.angle || 0);
+    ctx.scale(1 + k * 0.2, 1 + k * 0.2);
+    ctx.globalAlpha = 0.09 * (1 - k) + 0.025;
+    ctx.shadowBlur = 14 + i * 7;
+    ctx.shadowColor = `hsla(${194 + i * 14}, 90%, 76%, 0.42)`;
+    drawPoissonPlume(ctx, { ...fish, x: 0, y: 0, angle: 0 }, {
+      time: time - i * 20,
+      audio: { bass: 0, mids: 0, highs: 0, energy: 0 },
+      proximity: 0.8,
+      audioInfluence: 0,
+    });
+    ctx.restore();
   }
 
-  if (traceCircuit.length > 1) {
-    let nearestIndex = 0;
-    let nearestDist = Infinity;
-    for (let i = 0; i < traceCircuit.length; i += 1) {
-      const p = traceCircuit[i];
-      const d = Math.hypot((p.x || 0) - (fish.x || 0), (p.y || 0) - (fish.y || 0));
-      if (d < nearestDist) {
-        nearestDist = d;
-        nearestIndex = i;
-      }
-    }
+  // Corps principal vaporeux (double passe) sans audio-réactivité.
+  ctx.save();
+  ctx.translate(centerX, centerY + Math.sin(t * 1.0) * 2.5);
+  ctx.rotate(fish.angle || 0);
 
-    const lookAhead = Math.min(26, traceCircuit.length);
-    const perspective = Math.min(width, height) * 0.58;
-    ctx.beginPath();
-    for (let step = 0; step < lookAhead; step += 1) {
-      const index = (nearestIndex + step) % traceCircuit.length;
-      const p = traceCircuit[index];
-      const dx = (p.x || 0) - (fish.x || 0);
-      const dy = (p.y || 0) - (fish.y || 0);
-      const dist = Math.hypot(dx, dy);
-      const relAngle = normalizeAngle(Math.atan2(dy, dx) - (fish.angle || 0));
-      const front = Math.cos(relAngle);
-      if (front < -0.15) continue;
-
-      const depthFactor = 1 / (1 + dist * 0.006);
-      const screenX = centerX + Math.sin(relAngle) * perspective * depthFactor;
-      const screenY = centerY - front * 90 * depthFactor + (p.depth - fishDepth) * 12;
-
-      if (step === 0) ctx.moveTo(screenX, screenY);
-      else ctx.lineTo(screenX, screenY);
-
-      const glow = 2 + depthFactor * 13;
-      ctx.beginPath();
-      ctx.arc(screenX, screenY, glow * 0.22, 0, TAU);
-      ctx.fillStyle = `rgba(236, 253, 255, ${0.28 + depthFactor * 0.45})`;
-      ctx.fill();
-    }
-
-    ctx.strokeStyle = `rgba(125, 211, 252, ${0.34 + speedNorm * 0.2})`;
-    ctx.lineWidth = 2.6 + speedNorm * 2.4;
-    ctx.shadowBlur = 22;
-    ctx.shadowColor = "rgba(56, 189, 248, 0.7)";
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    for (let step = 2; step < Math.min(12, lookAhead); step += 2) {
-      const index = (nearestIndex + step) % traceCircuit.length;
-      const p = traceCircuit[index];
-      const dx = (p.x || 0) - (fish.x || 0);
-      const dy = (p.y || 0) - (fish.y || 0);
-      const dist = Math.hypot(dx, dy);
-      const relAngle = normalizeAngle(Math.atan2(dy, dx) - (fish.angle || 0));
-      const front = Math.cos(relAngle);
-      if (front < -0.2) continue;
-      const depthFactor = 1 / (1 + dist * 0.006);
-      const sx = centerX + Math.sin(relAngle) * perspective * depthFactor;
-      const sy = centerY - front * 90 * depthFactor + (p.depth - fishDepth) * 12;
-      const size = 1.4 + depthFactor * 10;
-      ctx.beginPath();
-      ctx.arc(sx, sy, size, 0, TAU);
-      ctx.fillStyle = `rgba(250, 245, 255, ${0.2 + depthFactor * 0.6})`;
-      ctx.fill();
-    }
-  }
-
-  const nearBubbles = bubbles
-    .map((bubble) => {
-      const dx = (bubble.x || 0) - (fish.x || 0);
-      const dy = (bubble.y || 0) - (fish.y || 0);
-      const distance = Math.hypot(dx, dy);
-      const angleToBubble = Math.atan2(dy, dx);
-      const relativeAngle = normalizeAngle(angleToBubble - (fish.angle || 0));
-      return { bubble, distance, relativeAngle };
-    })
-    .filter((item) => item.distance < 720)
-    .slice(0, 40);
-
-  const densityBoost = nearBubbles.length > 0 ? 1.25 : 0.9;
-  nearBubbles.forEach(({ bubble, distance, relativeAngle }) => {
-    const front = Math.cos(relativeAngle);
-    if (front < -0.2) return;
-
-    const perspective = Math.min(width, height) * 0.68;
-    const screenX = centerX + Math.sin(relativeAngle) * perspective * clamp(1 / (1 + distance * 0.008), 0.12, 1);
-    const screenY = centerY + (bubble.depth - fishDepth) * 36 + (1 - front) * 42;
-    const scale = clamp(220 / (distance + 120), 0.12, 1.5);
-    const alpha = clamp(0.48 * scale, 0.05, 0.55);
-    const [br, bgc, bb] = depthColor(bubble.depth || 1);
-
-    const halo = ctx.createRadialGradient(screenX, screenY, 2, screenX, screenY, 55 * scale * pulse);
-    halo.addColorStop(0, `rgba(${br}, ${bgc}, ${bb}, ${alpha})`);
-    halo.addColorStop(1, `rgba(${br}, ${bgc}, ${bb}, 0)`);
-    ctx.fillStyle = halo;
-    ctx.beginPath();
-    ctx.arc(screenX, screenY, 55 * scale * pulse, 0, TAU);
-    ctx.fill();
+  ctx.globalAlpha = 0.36;
+  ctx.shadowBlur = 24 + flow * 8;
+  ctx.shadowColor = "rgba(170, 230, 255, 0.62)";
+  drawPoissonPlume(ctx, { ...fish, x: 0, y: 0, angle: 0 }, {
+    time,
+    audio: { bass: 0, mids: 0, highs: 0, energy: 0 },
+    proximity: 0.9,
+    audioInfluence: 0,
   });
 
-  const particleCount = Math.floor(24 * densityBoost + speedNorm * 26);
-  for (let i = 0; i < particleCount; i += 1) {
-    const px = (Math.sin(i * 91.7 + t * (1.3 + speedNorm * 1.8)) * 0.5 + 0.5) * width;
-    const py = (i * 53 + t * 90 * (1 + speedNorm * 2.4)) % (height + 40) - 20;
-    const pr = 0.8 + ((i * 7) % 3) * 0.8;
-    ctx.beginPath();
-    ctx.arc(px, py, pr, 0, TAU);
-    ctx.fillStyle = `rgba(186, 230, 253, ${0.08 + speedNorm * 0.18})`;
-    ctx.fill();
-  }
-
-  ctx.save();
-  ctx.globalAlpha = 0.18;
-  for (let i = 0; i < 8; i += 1) {
-    const y = (i / 8) * height;
-    ctx.beginPath();
-    for (let x = -20; x <= width + 20; x += 18) {
-      const wave = Math.sin(x * 0.03 + t * 0.9 + i * 0.7) * 5;
-      if (x === -20) ctx.moveTo(x, y + wave);
-      else ctx.lineTo(x, y + wave);
-    }
-    ctx.strokeStyle = `rgba(226, 232, 240, ${0.05 + i * 0.006})`;
-    ctx.lineWidth = 1;
-    ctx.stroke();
-  }
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+  drawPoissonPlume(ctx, { ...fish, x: 0, y: 0, angle: 0 }, {
+    time,
+    audio: { bass: 0, mids: 0, highs: 0, energy: 0 },
+    proximity: 0.9,
+    audioInfluence: 0,
+  });
   ctx.restore();
+
+  // Halo doux global.
+  const aura = ctx.createRadialGradient(
+    centerX,
+    centerY,
+    12,
+    centerX,
+    centerY,
+    Math.min(width, height) * 0.42
+  );
+  aura.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${0.05 + flow * 0.03})`);
+  aura.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = aura;
+  ctx.fillRect(0, 0, width, height);
+
+  // Vignette finale anti-bruit visuel.
+  const vignette = ctx.createRadialGradient(
+    centerX,
+    centerY,
+    Math.min(width, height) * 0.24,
+    centerX,
+    centerY,
+    Math.max(width, height) * 0.84
+  );
+  vignette.addColorStop(0, "rgba(0,0,0,0)");
+  vignette.addColorStop(0.66, "rgba(0,0,0,0)");
+  vignette.addColorStop(1, "rgba(6, 8, 22, 0.64)");
+  ctx.fillStyle = vignette;
+  ctx.fillRect(0, 0, width, height);
 }
