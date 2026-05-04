@@ -18,13 +18,16 @@ function depthColor(depth = 1) {
 }
 
 export function drawResonantFPV(ctx, rect, current, time) {
+  const width = rect?.width || ctx?.canvas?.width || 1;
+  const height = rect?.height || ctx?.canvas?.height || 1;
+  const centerX = width * 0.5;
+  const centerY = height * 0.52;
+
   const fish = current?.fish || {};
   const bubbles = Array.isArray(current?.bubbles) ? current.bubbles : [];
   const traceCircuit = Array.isArray(current?.traceCircuit) ? current.traceCircuit : [];
 
   const t = time * 0.001;
-  const centerX = rect.width * 0.5;
-  const centerY = rect.height * 0.52;
   const speed = Math.hypot(fish.vx || 0, fish.vy || 0);
   const speedNorm = clamp(speed / 18, 0, 1.35);
   const pulse = 1 + speedNorm * 0.45 + Math.sin(t * 3.2) * 0.03;
@@ -32,14 +35,14 @@ export function drawResonantFPV(ctx, rect, current, time) {
 
   const [r, g, b] = depthColor(fishDepth);
 
-  const bg = ctx.createRadialGradient(centerX, centerY, 20, centerX, centerY, Math.max(rect.width, rect.height) * 0.88);
+  const bg = ctx.createRadialGradient(centerX, centerY, 20, centerX, centerY, Math.max(width, height) * 0.88);
   bg.addColorStop(0, `rgba(${r}, ${g}, ${b}, 0.16)`);
   bg.addColorStop(0.5, "rgba(6, 12, 28, 0.92)");
   bg.addColorStop(1, "rgba(1, 4, 12, 1)");
   ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, rect.width, rect.height);
+  ctx.fillRect(0, 0, width, height);
 
-  const tunnelRadius = Math.min(rect.width, rect.height) * (0.34 + speedNorm * 0.08);
+  const tunnelRadius = Math.min(width, height) * (0.34 + speedNorm * 0.08);
   for (let i = 0; i < 16; i += 1) {
     const k = i / 15;
     const z = 1 - k;
@@ -76,7 +79,7 @@ export function drawResonantFPV(ctx, rect, current, time) {
     }
 
     const lookAhead = Math.min(26, traceCircuit.length);
-    const perspective = Math.min(rect.width, rect.height) * 0.58;
+    const perspective = Math.min(width, height) * 0.58;
     ctx.beginPath();
     for (let step = 0; step < lookAhead; step += 1) {
       const index = (nearestIndex + step) % traceCircuit.length;
@@ -146,7 +149,7 @@ export function drawResonantFPV(ctx, rect, current, time) {
     const front = Math.cos(relativeAngle);
     if (front < -0.2) return;
 
-    const perspective = Math.min(rect.width, rect.height) * 0.68;
+    const perspective = Math.min(width, height) * 0.68;
     const screenX = centerX + Math.sin(relativeAngle) * perspective * clamp(1 / (1 + distance * 0.008), 0.12, 1);
     const screenY = centerY + (bubble.depth - fishDepth) * 36 + (1 - front) * 42;
     const scale = clamp(220 / (distance + 120), 0.12, 1.5);
@@ -164,8 +167,8 @@ export function drawResonantFPV(ctx, rect, current, time) {
 
   const particleCount = Math.floor(24 * densityBoost + speedNorm * 26);
   for (let i = 0; i < particleCount; i += 1) {
-    const px = (Math.sin(i * 91.7 + t * (1.3 + speedNorm * 1.8)) * 0.5 + 0.5) * rect.width;
-    const py = (i * 53 + t * 90 * (1 + speedNorm * 2.4)) % (rect.height + 40) - 20;
+    const px = (Math.sin(i * 91.7 + t * (1.3 + speedNorm * 1.8)) * 0.5 + 0.5) * width;
+    const py = (i * 53 + t * 90 * (1 + speedNorm * 2.4)) % (height + 40) - 20;
     const pr = 0.8 + ((i * 7) % 3) * 0.8;
     ctx.beginPath();
     ctx.arc(px, py, pr, 0, TAU);
@@ -176,9 +179,9 @@ export function drawResonantFPV(ctx, rect, current, time) {
   ctx.save();
   ctx.globalAlpha = 0.18;
   for (let i = 0; i < 8; i += 1) {
-    const y = (i / 8) * rect.height;
+    const y = (i / 8) * height;
     ctx.beginPath();
-    for (let x = -20; x <= rect.width + 20; x += 18) {
+    for (let x = -20; x <= width + 20; x += 18) {
       const wave = Math.sin(x * 0.03 + t * 0.9 + i * 0.7) * 5;
       if (x === -20) ctx.moveTo(x, y + wave);
       else ctx.lineTo(x, y + wave);

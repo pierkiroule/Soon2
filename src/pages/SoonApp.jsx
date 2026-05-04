@@ -10,12 +10,6 @@ export default function SoonApp({ onBack }) {
   const [swimSpeed, setSwimSpeed] = useState(1);
   const [fpvMode, setFpvMode] = useState(false);
 
-  useEffect(() => {
-    if (mode !== "reso" && fpvMode) {
-      setFpvMode(false);
-    }
-  }, [mode, fpvMode]);
-
   // "zoom" | "speed" | null
   const [activeSlider, setActiveSlider] = useState(null);
 
@@ -38,6 +32,12 @@ export default function SoonApp({ onBack }) {
     updateFishDepth,
     updateBubble,
   } = useSoonStore();
+
+  useEffect(() => {
+    if (mode !== "reso" && fpvMode) {
+      setFpvMode(false);
+    }
+  }, [mode, fpvMode]);
 
   const selectedBubble =
     bubbles.find((bubble) => bubble.id === selectedBubbleId) || null;
