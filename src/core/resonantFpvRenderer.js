@@ -35,8 +35,57 @@ function projectFromFish(point, fish, centerX, centerY, scale) {
     depth,
     x: centerX + side * scale * depth,
     y: centerY - front * 120 * depth + zLayer,
-    front,
   };
+}
+
+function drawOrganicCircuitGuide(ctx, points, resonance, speedNorm) {
+  if (points.length < 3) return;
+
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  // Halo large doux
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length - 1; i += 1) {
+    const midX = (points[i].x + points[i + 1].x) * 0.5;
+    const midY = (points[i].y + points[i + 1].y) * 0.5;
+    ctx.quadraticCurveTo(points[i].x, points[i].y, midX, midY);
+  }
+  ctx.strokeStyle = `rgba(150, 235, 255, ${0.06 + resonance * 0.07})`;
+  ctx.lineWidth = 12 + speedNorm * 8;
+  ctx.stroke();
+
+  // Ligne principale organique
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length - 1; i += 1) {
+    const midX = (points[i].x + points[i + 1].x) * 0.5;
+    const midY = (points[i].y + points[i + 1].y) * 0.5;
+    ctx.quadraticCurveTo(points[i].x, points[i].y, midX, midY);
+  }
+  ctx.strokeStyle = `rgba(210, 248, 255, ${0.22 + resonance * 0.14})`;
+  ctx.lineWidth = 2.4 + speedNorm * 1.8;
+  ctx.shadowBlur = 16 + resonance * 8;
+  ctx.shadowColor = "rgba(120, 220, 255, 0.45)";
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  // points respirants
+  for (let i = 0; i < points.length; i += 3) {
+    const p = points[i];
+    const rr = 1.2 + p.depth * 4.8;
+    const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rr * 2.6);
+    glow.addColorStop(0, `rgba(240, 252, 255, ${0.2 + p.depth * 0.35})`);
+    glow.addColorStop(1, "rgba(240, 252, 255, 0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, rr * 2.6, 0, TAU);
+    ctx.fill();
+  }
+
+  ctx.restore();
 }
 
 export function drawResonantFPV(ctx, rect, current, time) {
@@ -62,7 +111,6 @@ export function drawResonantFPV(ctx, rect, current, time) {
 
   const [r, g, b] = depthColor(fishDepth);
 
-  // Environnement masqué : champ synesthésique abstrait.
   const bg = ctx.createRadialGradient(centerX, centerY, 20, centerX, centerY, Math.max(width, height) * 0.92);
   bg.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${0.15 + resonance * 0.05})`);
   bg.addColorStop(0.4, "rgba(12, 14, 36, 0.95)");
@@ -70,7 +118,6 @@ export function drawResonantFPV(ctx, rect, current, time) {
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
 
-  // Brumes 3D en nappes autour du poisson suivi caméra.
   for (let i = 0; i < 6; i += 1) {
     const p = i / 5;
     const y = centerY + (p - 0.5) * height * 0.46 + Math.sin(t * 0.38 + i) * (16 + resonance * 8);
@@ -83,7 +130,6 @@ export function drawResonantFPV(ctx, rect, current, time) {
     ctx.fillRect(0, y - 68, width, 136);
   }
 
-  // Trajectoire conservée : vision de suivi du poisson.
   if (traceCircuit.length > 1) {
     const scale = Math.min(width, height) * 0.72;
     let nearest = 0;
@@ -98,25 +144,14 @@ export function drawResonantFPV(ctx, rect, current, time) {
     }
 
     const points = [];
-    for (let i = 0; i < Math.min(34, traceCircuit.length); i += 1) {
+    for (let i = 0; i < Math.min(36, traceCircuit.length); i += 1) {
       const p = traceCircuit[(nearest + i) % traceCircuit.length];
       const pp = projectFromFish(p, fish, centerX, centerY, scale);
       if (pp) points.push(pp);
     }
-
-    if (points.length > 2) {
-      ctx.beginPath();
-      points.forEach((p, idx) => {
-        if (idx === 0) ctx.moveTo(p.x, p.y);
-        else ctx.lineTo(p.x, p.y);
-      });
-      ctx.strokeStyle = `rgba(205, 240, 255, ${0.12 + resonance * 0.12})`;
-      ctx.lineWidth = 1.2 + speedNorm;
-      ctx.stroke();
-    }
+    drawOrganicCircuitGuide(ctx, points, resonance, speedNorm);
   }
 
-  // Couronne particulaire 3D autour du poisson.
   const particleCount = Math.floor(120 + resonance * 60);
   for (let i = 0; i < particleCount; i += 1) {
     const lane = i / particleCount;
@@ -134,7 +169,36 @@ export function drawResonantFPV(ctx, rect, current, time) {
     ctx.fill();
   }
 
-  // Bulles: deviennent flashes de résonance spatiale.
+  // Echos visuels du contour du poisson (ondes boréales évaporées)
+  const bodyEchoCount = 6;
+  for (let i = 0; i < bodyEchoCount; i += 1) {
+    const k = i / bodyEchoCount;
+    const spread = 38 + i * (16 + resonance * 8);
+    ctx.save();
+    ctx.translate(centerX, centerY + Math.sin(t * 1.2) * 3);
+    ctx.rotate(fish.angle || 0);
+    ctx.scale(1 + k * 0.22, 1 + k * 0.22);
+    ctx.globalAlpha = 0.08 * (1 - k) + 0.03 + highs * 0.04;
+    ctx.shadowBlur = 18 + i * 6;
+    ctx.shadowColor = `hsla(${190 + i * 16}, 95%, 75%, 0.4)`;
+    drawPoissonPlume(ctx, { ...fish, x: 0, y: 0, angle: 0 }, {
+      time: time - i * 22,
+      audio: { bass, mids, highs, energy: resonance },
+      proximity: 0.8,
+      audioInfluence: 0.48,
+    });
+    ctx.restore();
+
+    const halo = ctx.createRadialGradient(centerX, centerY, spread * 0.2, centerX, centerY, spread);
+    halo.addColorStop(0, "rgba(255,255,255,0)");
+    halo.addColorStop(0.55, `hsla(${198 + i * 11}, 90%, 73%, ${0.03 + mids * 0.05})`);
+    halo.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, spread, 0, TAU);
+    ctx.fill();
+  }
+
   const sparks = Math.min(36, bubbles.length);
   for (let i = 0; i < sparks; i += 1) {
     const bubble = bubbles[i];
@@ -153,10 +217,21 @@ export function drawResonantFPV(ctx, rect, current, time) {
     ctx.fill();
   }
 
-  // Poisson plume EXACT du mode 2D (renderer existant) mais suivi caméra centré.
+  // Corps principal avec effet vaporeux (blur + glow)
   ctx.save();
   ctx.translate(centerX, centerY + Math.sin(t * 1.2) * 3);
   ctx.rotate(fish.angle || 0);
+  ctx.globalAlpha = 0.35;
+  ctx.shadowBlur = 26 + resonance * 12;
+  ctx.shadowColor = "rgba(170, 230, 255, 0.65)";
+  drawPoissonPlume(ctx, { ...fish, x: 0, y: 0, angle: 0 }, {
+    time,
+    audio: { bass, mids, highs, energy: resonance },
+    proximity: 0.92,
+    audioInfluence: 0.42,
+  });
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
   drawPoissonPlume(ctx, { ...fish, x: 0, y: 0, angle: 0 }, {
     time,
     audio: { bass, mids, highs, energy: resonance },
@@ -165,7 +240,6 @@ export function drawResonantFPV(ctx, rect, current, time) {
   });
   ctx.restore();
 
-  // Flou périphérique relaxant.
   const vignette = ctx.createRadialGradient(
     centerX,
     centerY,
