@@ -37,6 +37,7 @@ const initialState = {
     ...(saved?.fish || {}),
   },
   selectedBubbleId: null,
+  selectedFish: false,
   traceCircuit: saved?.traceCircuit || createSlalomCircuitFromBubbles(saved?.bubbles || defaultPack.bubbles),
   selectedBeaconId: null,
   circuitAutopilot: false,
@@ -63,6 +64,7 @@ export const useSoonStore = create((set, get) => ({
       mode,
       eyesClosed: false,
       selectedBubbleId: null,
+  selectedFish: false,
       selectedBeaconId: null,
       circuitAutopilot: get().circuitAutopilot,
     });
@@ -222,6 +224,7 @@ export const useSoonStore = create((set, get) => ({
     set({
       selectedBeaconId: id,
       selectedBubbleId: null,
+  selectedFish: false,
     });
   },
 
@@ -290,6 +293,7 @@ export const useSoonStore = create((set, get) => ({
       circuitSegmentIndex: 0,
       circuitSegmentT: 0,
       selectedBubbleId: null,
+  selectedFish: false,
       fish: {
         ...state.fish,
         targetX: first.x,
@@ -389,6 +393,7 @@ export const useSoonStore = create((set, get) => ({
         ? data.traceCircuit
         : state.traceCircuit,
       selectedBubbleId: null,
+  selectedFish: false,
       selectedBeaconId: null,
       path: Array.isArray(data.path) ? data.path : [],
       eyesClosed: Boolean(data.eyesClosed),
@@ -405,6 +410,7 @@ export const useSoonStore = create((set, get) => ({
       bubbles: defaultPack.bubbles,
       fish: { ...defaultFish },
       selectedBubbleId: null,
+  selectedFish: false,
       traceCircuit: createDefaultTraceCircuit(),
       selectedBeaconId: null,
       circuitAutopilot: false,

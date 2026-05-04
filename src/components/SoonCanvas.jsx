@@ -8,6 +8,8 @@ import {
   playBubbleSound,
   stopBubbleSound,
   updateAmbientMix,
+  updateAudioListener,
+  updateBubbleAudioPosition,
 } from "../core/audioEngine.js";
 import { drawPoissonPlume } from "../core/poissonPlumeRenderer.js";
 import {
@@ -41,6 +43,7 @@ export default function SoonCanvas({
   onFishTarget,
   onTickFish,
   onSelectBubble,
+  onSelectFish,
   onSelectBeacon,
   onMoveBeacon,
   onMoveBubble,
@@ -222,7 +225,12 @@ export default function SoonCanvas({
     return clampToCircle(point, arenaRef.current.radius - 70);
   }
 
-  function findBubbleAt(point) {
+  function isFishHit(point, fish) {
+  if (!fish) return false;
+  return Math.hypot(point.x - fish.x, point.y - fish.y) < 54;
+}
+
+function findBubbleAt(point) {
     return [...stateRef.current.bubbles]
       .reverse()
       .find((bubble) => distance(bubble, point) <= bubble.r);
@@ -239,8 +247,8 @@ export default function SoonCanvas({
     canvas.setPointerCapture(event.pointerId);
 
     const point = getSafeWorldFromEvent(event);
-    const hit = findBubbleAt(point);
     const current = stateRef.current;
+    const hit = findBubbleAt(point);
     const beaconHit = current.mode === "reso" ? findBeaconAt(point) : null;
 
     pointerRef.current.down = true;
@@ -284,6 +292,13 @@ export default function SoonCanvas({
       now - pointerRef.current.lastTapAt < 360 &&
       last &&
       Math.hypot(last.x - point.x, last.y - point.y) < 48;
+
+    if (isDoubleTap && isFishHit(point, current.fish)) {
+      onSelectFish?.();
+      pointerRef.current.lastTapAt = now;
+      pointerRef.current.lastTapPos = point;
+      return;
+    }
 
     if (isDoubleTap && current.mode === "compo") {
       onAddBubble(point.x, point.y);

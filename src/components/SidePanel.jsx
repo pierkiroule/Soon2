@@ -5,6 +5,7 @@ import BubbleEditor from "./BubbleEditor.jsx";
 export default function SidePanel({
   mode,
   selectedBubble,
+  selectedFish,
   selectedBeacon,
   circuitAutopilot,
   onUpdateBeacon,
@@ -12,6 +13,7 @@ export default function SidePanel({
   onStopCircuitAutopilot,
   onAutoGenerateTraceCircuit,
   onUpdateBubble,
+  onUpdateFishDepth,
   onDeleteBubble,
 }) {
   const [open, setOpen] = useState(false);
@@ -53,6 +55,27 @@ export default function SidePanel({
               ×
             </button>
           </header>
+
+
+          {selectedFish && (
+            <section className="help-card compact-help">
+              <p>Poisson-plume sélectionné</p>
+
+              <label>
+                Profondeur
+                <select
+                  value={selectedFish.depth || 1}
+                  onChange={(event) =>
+                    onUpdateFishDepth(Number(event.target.value))
+                  }
+                >
+                  <option value={1}>1 · surface</option>
+                  <option value={2}>2 · milieu</option>
+                  <option value={3}>3 · profondeur</option>
+                </select>
+              </label>
+            </section>
+          )}
 
           {mode === "compo" && selectedBubble && (
             <BubbleEditor
