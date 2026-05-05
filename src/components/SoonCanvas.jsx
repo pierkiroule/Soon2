@@ -260,7 +260,9 @@ function findBubbleAt(point) {
 
   function handlePointerDown(event) {
     const canvas = canvasRef.current;
-    canvas.setPointerCapture(event.pointerId);
+    try {
+      canvas.setPointerCapture(event.pointerId);
+    } catch {}
 
     const point = getSafeWorldFromEvent(event);
     const current = stateRef.current;
