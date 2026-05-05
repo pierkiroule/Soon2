@@ -79,6 +79,7 @@ export default function SoonCanvas({
     longPressCanceled: false,
     downAt: null,
     downPoint: null,
+    downClient: null,
     hitType: null,
     hitId: null,
     lastTapAt: 0,
@@ -280,6 +281,7 @@ function findBubbleAt(point) {
     pointerRef.current.longPressCanceled = false;
     pointerRef.current.downAt = Date.now();
     pointerRef.current.downPoint = point;
+    pointerRef.current.downClient = { x: event.clientX, y: event.clientY };
     pointerRef.current.hitType = beaconHit ? "beacon" : hit ? "bubble" : fishHit ? "fish" : "empty";
     pointerRef.current.hitId = beaconHit?.id ?? hit?.id ?? null;
 
@@ -323,8 +325,8 @@ function findBubbleAt(point) {
     const ptr = pointerRef.current;
     if (ptr.downPoint && !ptr.longPressTriggered && !ptr.longPressCanceled) {
       const moveBeforeLongPress = Math.hypot(
-        point.x - ptr.downPoint.x,
-        point.y - ptr.downPoint.y
+        event.clientX - ptr.downClient.x,
+        event.clientY - ptr.downClient.y
       );
       if (moveBeforeLongPress > LONG_PRESS_MOVE_CANCEL) {
         ptr.longPressCanceled = true;
@@ -348,7 +350,7 @@ function findBubbleAt(point) {
       return;
     }
 
-    if (!current.circuitAutopilot) {
+    if (ptr.hitType === "empty" && !current.circuitAutopilot) {
       onFishTarget(point.x, point.y);
     }
   }
@@ -365,8 +367,8 @@ function findBubbleAt(point) {
     }
 
     const downDuration = now - (ptr.downAt || now);
-    const moved = ptr.downPoint
-      ? Math.hypot(point.x - ptr.downPoint.x, point.y - ptr.downPoint.y)
+    const moved = ptr.downClient
+      ? Math.hypot(event.clientX - ptr.downClient.x, event.clientY - ptr.downClient.y)
       : Number.POSITIVE_INFINITY;
     const isTap = !ptr.longPressTriggered && downDuration < LONG_PRESS_MS && moved <= LONG_PRESS_MOVE_CANCEL;
     const last = ptr.lastTapPos;
@@ -405,6 +407,7 @@ function findBubbleAt(point) {
     pointerRef.current.longPressCanceled = false;
     pointerRef.current.downAt = null;
     pointerRef.current.downPoint = null;
+    pointerRef.current.downClient = null;
     pointerRef.current.hitType = null;
     pointerRef.current.hitId = null;
 
