@@ -345,6 +345,10 @@ function findBubbleAt(point) {
       });
       return;
     }
+
+    if (!current.circuitAutopilot) {
+      onFishTarget(point.x, point.y);
+    }
   }
 
   function handlePointerUp(event) {
