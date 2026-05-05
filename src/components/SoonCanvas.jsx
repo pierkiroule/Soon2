@@ -83,6 +83,8 @@ export default function SoonCanvas({
     hitId: null,
     lastTapAt: 0,
     lastTapPos: null,
+    lastTapType: null,
+    lastTapId: null,
   });
 
   const stateRef = useRef({
@@ -371,8 +373,14 @@ function findBubbleAt(point) {
     const isDoubleTap =
       isTap &&
       now - ptr.lastTapAt < DOUBLE_TAP_MS &&
-      last &&
-      Math.hypot(last.x - point.x, last.y - point.y) < DOUBLE_TAP_DISTANCE &&
+      ptr.hitType !== "empty" &&
+      (
+        (ptr.hitType === "fish" && ptr.lastTapType === "fish") ||
+        (ptr.lastTapType === ptr.hitType &&
+          ptr.lastTapId === ptr.hitId &&
+          last &&
+          Math.hypot(last.x - point.x, last.y - point.y) < DOUBLE_TAP_DISTANCE)
+      ) &&
       ptr.hitType !== "empty";
 
     if (isTap) {
@@ -387,6 +395,8 @@ function findBubbleAt(point) {
 
     ptr.lastTapAt = isTap ? now : 0;
     ptr.lastTapPos = isTap ? point : null;
+    ptr.lastTapType = isTap ? ptr.hitType : null;
+    ptr.lastTapId = isTap ? ptr.hitId : null;
     pointerRef.current.down = false;
     pointerRef.current.pointerId = null;
     pointerRef.current.dragBubbleId = null;
