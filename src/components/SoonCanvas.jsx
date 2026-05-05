@@ -28,6 +28,11 @@ import { sampleSmoothCircuit } from "../core/traceCircuit.js";
 import { drawFishFx, updateFishFx } from "../core/fishFxEngine.js";
 import { drawResonantFPV } from "../core/resonantFpvRenderer.js";
 
+const LONG_PRESS_MS = 450;
+const LONG_PRESS_MOVE_CANCEL = 12;
+const DOUBLE_TAP_MS = 360;
+const DOUBLE_TAP_DISTANCE = 48;
+
 export default function SoonCanvas({
   mode,
   bubbles,
@@ -68,6 +73,14 @@ export default function SoonCanvas({
     down: false,
     pointerId: null,
     dragBubbleId: null,
+    dragBeaconId: null,
+    longPressTimer: null,
+    longPressTriggered: false,
+    longPressCanceled: false,
+    downAt: null,
+    downPoint: null,
+    hitType: null,
+    hitId: null,
     lastTapAt: 0,
     lastTapPos: null,
   });
@@ -253,62 +266,48 @@ function findBubbleAt(point) {
     const current = stateRef.current;
     const hit = findBubbleAt(point);
     const beaconHit = current.mode === "reso" ? findBeaconAt(point) : null;
+    const fishHit = isFishHit(point, current.fish);
 
     pointerRef.current.down = true;
     pointerRef.current.pointerId = event.pointerId;
     pointerRef.current.dragBubbleId = null;
     pointerRef.current.dragBeaconId = null;
+    pointerRef.current.longPressTriggered = false;
+    pointerRef.current.longPressCanceled = false;
+    pointerRef.current.downAt = Date.now();
+    pointerRef.current.downPoint = point;
+    pointerRef.current.hitType = beaconHit ? "beacon" : hit ? "bubble" : fishHit ? "fish" : "empty";
+    pointerRef.current.hitId = beaconHit?.id ?? hit?.id ?? null;
 
-    if (beaconHit) {
-      onSelectBeacon(beaconHit.id);
-      pointerRef.current.dragBubbleId = null;
-    pointerRef.current.dragBeaconId = null;
-      pointerRef.current.dragBeaconId = beaconHit.id;
-      return;
+    if (pointerRef.current.longPressTimer) {
+      clearTimeout(pointerRef.current.longPressTimer);
     }
 
-    if (hit) {
-      onSelectBubble(hit.id);
-      playBubbleSound(hit, current.fish);
+    pointerRef.current.longPressTimer = setTimeout(() => {
+      const ptr = pointerRef.current;
+      if (!ptr.down || ptr.longPressCanceled) return;
+      ptr.longPressTriggered = true;
 
-      if (current.mode === "compo") {
-        pointerRef.current.dragBubbleId = hit.id;
+      if (ptr.hitType === "bubble" && current.mode === "compo") {
+        ptr.dragBubbleId = ptr.hitId;
+        return;
       }
 
-      return;
-    }
+      if (ptr.hitType === "beacon" && current.mode === "reso") {
+        ptr.dragBeaconId = ptr.hitId;
+        return;
+      }
 
-    onSelectBubble(null);
-
-    if (!current.circuitAutopilot) {
-      onFishTarget(point.x, point.y);
-    }
-
-    if (current.mode === "reso") {
-      onAddPathPoint(point);
-    }
-
-    const now = Date.now();
-    const last = pointerRef.current.lastTapPos;
-
-    const isDoubleTap =
-      now - pointerRef.current.lastTapAt < 360 &&
-      last &&
-      Math.hypot(last.x - point.x, last.y - point.y) < 48;
-
-    if (isDoubleTap && isFishHit(point, current.fish)) {
-      onSelectFish?.();
-      pointerRef.current.lastTapAt = now;
-      pointerRef.current.lastTapPos = point;
-      return;
-    }
-
-    if (isDoubleTap && current.mode === "compo") {
-      onAddBubble(point.x, point.y);
-    }
-
-    pointerRef.current.lastTapAt = now;
-    pointerRef.current.lastTapPos = point;
+      if (ptr.hitType === "empty") {
+        if (current.mode === "compo") {
+          onAddBubble(point.x, point.y);
+          return;
+        }
+        if (current.mode === "reso") {
+          onAddPathPoint(point);
+        }
+      }
+    }, LONG_PRESS_MS);
   }
 
   function handlePointerMove(event) {
@@ -317,31 +316,81 @@ function findBubbleAt(point) {
     const point = getSafeWorldFromEvent(event);
     const current = stateRef.current;
 
-    if (pointerRef.current.dragBeaconId) {
+    const ptr = pointerRef.current;
+    if (ptr.downPoint && !ptr.longPressTriggered && !ptr.longPressCanceled) {
+      const moveBeforeLongPress = Math.hypot(
+        point.x - ptr.downPoint.x,
+        point.y - ptr.downPoint.y
+      );
+      if (moveBeforeLongPress > LONG_PRESS_MOVE_CANCEL) {
+        ptr.longPressCanceled = true;
+        if (ptr.longPressTimer) {
+          clearTimeout(ptr.longPressTimer);
+          ptr.longPressTimer = null;
+        }
+      }
+    }
+
+    if (ptr.dragBeaconId) {
       onMoveBeacon(pointerRef.current.dragBeaconId, point.x, point.y);
       return;
     }
 
-    if (pointerRef.current.dragBubbleId) {
+    if (ptr.dragBubbleId) {
       onMoveBubble(pointerRef.current.dragBubbleId, {
         x: point.x,
         y: point.y,
       });
       return;
     }
-
-    onFishTarget(point.x, point.y);
-
-    if (current.mode === "reso") {
-      onAddPathPoint(point);
-    }
   }
 
   function handlePointerUp(event) {
+    const point = getSafeWorldFromEvent(event);
+    const current = stateRef.current;
+    const ptr = pointerRef.current;
+    const now = Date.now();
+
+    if (ptr.longPressTimer) {
+      clearTimeout(ptr.longPressTimer);
+      ptr.longPressTimer = null;
+    }
+
+    const downDuration = now - (ptr.downAt || now);
+    const moved = ptr.downPoint
+      ? Math.hypot(point.x - ptr.downPoint.x, point.y - ptr.downPoint.y)
+      : Number.POSITIVE_INFINITY;
+    const isTap = !ptr.longPressTriggered && downDuration < LONG_PRESS_MS && moved <= LONG_PRESS_MOVE_CANCEL;
+    const last = ptr.lastTapPos;
+    const isDoubleTap =
+      isTap &&
+      now - ptr.lastTapAt < DOUBLE_TAP_MS &&
+      last &&
+      Math.hypot(last.x - point.x, last.y - point.y) < DOUBLE_TAP_DISTANCE &&
+      ptr.hitType !== "empty";
+
+    if (isTap) {
+      if (isDoubleTap) {
+        if (ptr.hitType === "bubble") onSelectBubble?.(ptr.hitId);
+        if (ptr.hitType === "beacon") onSelectBeacon?.(ptr.hitId);
+        if (ptr.hitType === "fish") onSelectFish?.();
+      } else if (ptr.hitType === "empty" && !current.circuitAutopilot) {
+        onFishTarget(point.x, point.y);
+      }
+    }
+
+    ptr.lastTapAt = isTap ? now : 0;
+    ptr.lastTapPos = isTap ? point : null;
     pointerRef.current.down = false;
     pointerRef.current.pointerId = null;
     pointerRef.current.dragBubbleId = null;
     pointerRef.current.dragBeaconId = null;
+    pointerRef.current.longPressTriggered = false;
+    pointerRef.current.longPressCanceled = false;
+    pointerRef.current.downAt = null;
+    pointerRef.current.downPoint = null;
+    pointerRef.current.hitType = null;
+    pointerRef.current.hitId = null;
 
     try {
       canvasRef.current.releasePointerCapture(event.pointerId);
