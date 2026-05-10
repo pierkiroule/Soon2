@@ -2,16 +2,49 @@ function safeNumber(value, fallback = 0) {
   return Number.isFinite(value) ? value : fallback;
 }
 
-function traceFishBodyPath(ctx, bodyUndulate = 0, bodyBreath = 0) {
+function traceFishBodyPath(ctx, bodyUndulate = 0, bodyBreath = 0, bend = 0) {
   const bu = safeNumber(bodyUndulate, 0);
   const br = safeNumber(bodyBreath, 0);
+  const curve = Math.max(-1, Math.min(1, safeNumber(bend, 0)));
+
+  const headWidth = 10.9 + br * 0.4;
+  const cheekLift = 1.8 + Math.abs(curve) * 1.2;
+  const bodyShift = curve * 5.8;
 
   ctx.beginPath();
-  ctx.moveTo(0, -24);
-  ctx.bezierCurveTo(10 + bu * 20, -18, 13 + br * 0.4, -5, 10, 8);
-  ctx.bezierCurveTo(7, 20, 2.5, 27, 0, 30);
-  ctx.bezierCurveTo(-2.5, 27, -7, 20, -10, 8);
-  ctx.bezierCurveTo(-13 - br * 0.4, -5, -10 - bu * 20, -18, 0, -24);
+  ctx.moveTo(bodyShift * 0.12, -27.5);
+  ctx.bezierCurveTo(
+    headWidth + bodyShift * 0.4,
+    -23 + cheekLift,
+    13.2 + br * 0.45 + bodyShift,
+    -10.2,
+    9.3 + bodyShift * 0.84,
+    8.8
+  );
+  ctx.bezierCurveTo(
+    6.4 + bodyShift * 0.9,
+    22.8,
+    2.1 + bodyShift * 0.72,
+    33.5,
+    bodyShift * 0.35,
+    36.8
+  );
+  ctx.bezierCurveTo(
+    -2.1 + bodyShift * 0.28,
+    33.5,
+    -6.4 + bodyShift * 0.1,
+    22.8,
+    -9.3 + bodyShift * 0.18,
+    8.8
+  );
+  ctx.bezierCurveTo(
+    -13.2 + br * 0.45 + bodyShift * 0.05,
+    -10.2,
+    -headWidth + bodyShift * 0.04,
+    -23 + cheekLift,
+    bodyShift * 0.12,
+    -27.5
+  );
   ctx.closePath();
 }
 
@@ -68,8 +101,8 @@ function drawAudioWings(ctx, data) {
     bubbleAudioInfluence,
   } = data;
 
-  const wingSpan = 12 + finMorph * 22;
-  const wingLength = 15 + finMorph * 30;
+  const wingSpan = 14 + finMorph * 26;
+  const wingLength = 20 + finMorph * 34;
 
   ctx.save();
   ctx.shadowBlur = 0;
@@ -82,13 +115,13 @@ function drawAudioWings(ctx, data) {
   const finGradL = ctx.createLinearGradient(0, -2, -wingSpan, wingLength);
   finGradL.addColorStop(
     0,
-    `hsla(${196 + bubbleAudioInfluence * 10}, 92%, 80%, ${(0.66 + finMorph * 0.16) * wingAlpha})`
+    `hsla(0, 0%, 100%, ${(0.72 + finMorph * 0.14) * wingAlpha})`
   );
   finGradL.addColorStop(
-    0.52,
-    `hsla(${216 + bubbleAudioInfluence * 8}, 94%, 68%, ${(0.55 + finMorph * 0.2) * wingAlpha})`
+    0.54,
+    `hsla(${208 + bubbleAudioInfluence * 10}, 88%, 86%, ${(0.36 + finMorph * 0.2) * wingAlpha})`
   );
-  finGradL.addColorStop(1, `hsla(${328 + finMorph * 12}, 96%, 72%, 0)`);
+  finGradL.addColorStop(1, `hsla(${324 + finMorph * 10}, 96%, 76%, 0.26)`);
 
   ctx.fillStyle = finGradL;
   ctx.shadowColor = "transparent";
@@ -112,6 +145,21 @@ function drawAudioWings(ctx, data) {
     -1
   );
   ctx.fill();
+
+  ctx.strokeStyle = `hsla(${300 + bubbleAudioInfluence * 6}, 84%, 80%, ${0.2 * wingAlpha})`;
+  ctx.lineWidth = 0.6;
+  for (let i = 0; i < 4; i += 1) {
+    const t = (i + 1) / 5;
+    ctx.beginPath();
+    ctx.moveTo(-1, 0.5 + t * 3.2);
+    ctx.quadraticCurveTo(
+      -wingSpan * (0.34 + t * 0.24),
+      wingLength * (0.26 + t * 0.15),
+      -wingSpan * (0.4 + t * 0.34),
+      wingLength * (0.54 + t * 0.1)
+    );
+    ctx.stroke();
+  }
   ctx.restore();
 
   ctx.save();
@@ -122,13 +170,13 @@ function drawAudioWings(ctx, data) {
   const finGradR = ctx.createLinearGradient(0, -2, wingSpan, wingLength);
   finGradR.addColorStop(
     0,
-    `hsla(${196 + bubbleAudioInfluence * 10}, 92%, 80%, ${(0.66 + finMorph * 0.16) * wingAlpha})`
+    `hsla(0, 0%, 100%, ${(0.72 + finMorph * 0.14) * wingAlpha})`
   );
   finGradR.addColorStop(
-    0.52,
-    `hsla(${216 + bubbleAudioInfluence * 8}, 94%, 68%, ${(0.55 + finMorph * 0.2) * wingAlpha})`
+    0.58,
+    `hsla(${208 + bubbleAudioInfluence * 10}, 88%, 86%, ${(0.36 + finMorph * 0.2) * wingAlpha})`
   );
-  finGradR.addColorStop(1, `hsla(${328 + finMorph * 12}, 96%, 72%, 0)`);
+  finGradR.addColorStop(1, `hsla(${324 + finMorph * 10}, 96%, 76%, 0.26)`);
 
   ctx.fillStyle = finGradR;
   ctx.shadowColor = "transparent";
@@ -152,54 +200,72 @@ function drawAudioWings(ctx, data) {
     -1
   );
   ctx.fill();
+
+  ctx.strokeStyle = `hsla(${300 + bubbleAudioInfluence * 6}, 84%, 80%, ${0.2 * wingAlpha})`;
+  ctx.lineWidth = 0.6;
+  for (let i = 0; i < 4; i += 1) {
+    const t = (i + 1) / 5;
+    ctx.beginPath();
+    ctx.moveTo(1, 0.5 + t * 3.2);
+    ctx.quadraticCurveTo(
+      wingSpan * (0.34 + t * 0.24),
+      wingLength * (0.26 + t * 0.15),
+      wingSpan * (0.4 + t * 0.34),
+      wingLength * (0.54 + t * 0.1)
+    );
+    ctx.stroke();
+  }
   ctx.restore();
 
   ctx.restore();
 }
 
 function drawTail(ctx, data) {
-  const { wag, bodyHueTop, bodyHueMid, bodyHueLow } = data;
+  const { wag, bodyHueTop, bodyHueMid, bodyHueLow, flow = 0, bend = 0 } = data;
 
   ctx.save();
-  ctx.translate(0, 20);
-  ctx.rotate(wag);
+  ctx.translate(safeNumber(bend, 0) * 1.8, 20);
+  ctx.rotate(wag + safeNumber(bend, 0) * 0.22);
 
   ctx.shadowBlur = 0;
   ctx.shadowColor = "transparent";
 
   const tailGrad = ctx.createLinearGradient(0, 0, 0, 26);
-  tailGrad.addColorStop(0, `hsla(${bodyHueMid}, 84%, 80%, 0.92)`);
-  tailGrad.addColorStop(1, `hsla(${bodyHueLow + 10}, 80%, 74%, 0)`);
+  tailGrad.addColorStop(0, `hsla(0, 0%, 100%, 0.92)`);
+  tailGrad.addColorStop(0.62, `hsla(210, 86%, 88%, 0.46)`);
+  tailGrad.addColorStop(1, `hsla(320, 94%, 76%, 0.08)`);
 
   ctx.fillStyle = tailGrad;
 
+  const plumeSpread = 1.18 + Math.max(0, flow) * 0.24;
+
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  ctx.bezierCurveTo(-7, 5, -9, 14, -3.5, 22);
-  ctx.quadraticCurveTo(0, 18, 3.5, 22);
-  ctx.bezierCurveTo(9, 14, 7, 5, 0, 0);
+  ctx.bezierCurveTo(-9.4 * plumeSpread, 3.5, -14.5 * plumeSpread, 15.8, -6.2 * plumeSpread, 27);
+  ctx.quadraticCurveTo(0, 22.2, 6.2 * plumeSpread, 27);
+  ctx.bezierCurveTo(14.5 * plumeSpread, 15.8, 9.4 * plumeSpread, 3.5, 0, 0);
   ctx.fill();
 
   const tipGrad = ctx.createLinearGradient(0, 18, -6, 36);
-  tipGrad.addColorStop(0, `hsla(${bodyHueTop}, 90%, 90%, 0.65)`);
-  tipGrad.addColorStop(1, `hsla(${bodyHueTop + 8}, 88%, 94%, 0)`);
+  tipGrad.addColorStop(0, `hsla(206, 92%, 86%, 0.68)`);
+  tipGrad.addColorStop(1, `hsla(322, 96%, 74%, 0)`);
 
   ctx.fillStyle = tipGrad;
   ctx.beginPath();
-  ctx.moveTo(-1.5, 18);
-  ctx.bezierCurveTo(-5, 23, -8, 31, -4.5, 36);
-  ctx.quadraticCurveTo(-2, 30, -1.5, 18);
+  ctx.moveTo(-2.2, 20);
+  ctx.bezierCurveTo(-7, 26, -11.2, 36, -6.1, 42);
+  ctx.quadraticCurveTo(-2.4, 34.2, -2.2, 20);
   ctx.fill();
 
   const tipGrad2 = ctx.createLinearGradient(0, 18, 6, 36);
-  tipGrad2.addColorStop(0, `hsla(${bodyHueTop}, 90%, 90%, 0.65)`);
-  tipGrad2.addColorStop(1, `hsla(${bodyHueTop + 8}, 88%, 94%, 0)`);
+  tipGrad2.addColorStop(0, `hsla(206, 92%, 86%, 0.68)`);
+  tipGrad2.addColorStop(1, `hsla(322, 96%, 74%, 0)`);
 
   ctx.fillStyle = tipGrad2;
   ctx.beginPath();
-  ctx.moveTo(1.5, 18);
-  ctx.bezierCurveTo(5, 23, 8, 31, 4.5, 36);
-  ctx.quadraticCurveTo(2, 30, 1.5, 18);
+  ctx.moveTo(2.2, 20);
+  ctx.bezierCurveTo(7, 26, 11.2, 36, 6.1, 42);
+  ctx.quadraticCurveTo(2.4, 34.2, 2.2, 20);
   ctx.fill();
 
   ctx.restore();
@@ -304,9 +370,10 @@ export function drawPoissonPlume(ctx, fish, options = {}) {
   );
 
   const glide = Math.min(1, speed / maxSpeed + reactiveBass * 0.22 + mouthPull * 0.22);
+  const flowBend = Math.max(-1, Math.min(1, turnAmount * 1.8 + Math.sin(swimT * 1.6) * 0.12));
   const wag =
-    Math.sin(swimT * (8.4 + mouthPull * 4.2)) *
-    (0.13 + glide * 0.24 + turnAmount * 0.12);
+    Math.sin(swimT * (7.2 + mouthPull * 3.4)) *
+    (0.1 + glide * 0.2 + Math.abs(flowBend) * 0.16);
   const finMorph = Math.min(1, wingPresence * (0.72 + reactiveMids * 0.28));
 
   const finFlap =
@@ -320,20 +387,20 @@ export function drawPoissonPlume(ctx, fish, options = {}) {
       reactiveHighs * 0.42
   );
 
-  const bodyUndulate = Math.sin(swimT * 5.8) * (0.03 + glide * 0.055);
+  const bodyUndulate = Math.sin(swimT * 5) * (0.04 + glide * 0.06);
 
-  const bodyHueTop = 186 + Math.sin(swimT * 1.7) * 8;
-  const bodyHueMid = 198 + Math.sin(swimT * 1.3 + 1.4) * 12;
-  const bodyHueLow = 210 + Math.sin(swimT * 1.9 + 2.1) * 10;
+  const bodyHueTop = 12 + Math.sin(swimT * 1.4) * 3;
+  const bodyHueMid = 18 + Math.sin(swimT * 1.1 + 1.1) * 4;
+  const bodyHueLow = 24 + Math.sin(swimT * 1.5 + 1.8) * 4;
 
   ctx.save();
 
   ctx.translate(x, y);
-  ctx.rotate(angle + Math.PI / 2);
+  ctx.rotate(angle + Math.PI / 2 + flowBend * 0.08);
   ctx.globalAlpha *= depthVisual.alpha;
   ctx.scale(
-    depthVisual.scale * (1 - mouthPull * 0.035),
-    depthVisual.scale * (1 + mouthPull * 0.055)
+    depthVisual.scale * (1 - mouthPull * 0.03),
+    depthVisual.scale * (1 + mouthPull * 0.06 + Math.abs(flowBend) * 0.03)
   );
 
 
@@ -341,21 +408,21 @@ export function drawPoissonPlume(ctx, fish, options = {}) {
   ctx.shadowColor = "transparent";
 
   const bodyGrad = ctx.createLinearGradient(-10, -18, 10, 24);
-  bodyGrad.addColorStop(0, `hsla(${bodyHueTop}, 90%, 95%, ${0.88 + shimmerPulse * 0.12})`);
-  bodyGrad.addColorStop(0.38, `hsla(${bodyHueMid}, 85%, 80%, ${0.78 + shimmerPulse * 0.12})`);
-  bodyGrad.addColorStop(0.72, `hsla(${bodyHueLow}, 80%, 68%, ${0.76 + shimmerPulse * 0.14})`);
-  bodyGrad.addColorStop(1, `hsla(${bodyHueLow + 14}, 75%, 58%, 0.8)`);
+  bodyGrad.addColorStop(0, `hsla(0, 0%, 100%, ${0.9 + shimmerPulse * 0.08})`);
+  bodyGrad.addColorStop(0.4, `hsla(0, 0%, 98%, ${0.83 + shimmerPulse * 0.1})`);
+  bodyGrad.addColorStop(0.78, `hsla(${bodyHueMid}, 92%, 90%, ${0.58 + shimmerPulse * 0.12})`);
+  bodyGrad.addColorStop(1, `hsla(${bodyHueLow}, 92%, 80%, 0.42)`);
 
   ctx.fillStyle = bodyGrad;
-  traceFishBodyPath(ctx, bodyUndulate, bodyBreath);
+  traceFishBodyPath(ctx, bodyUndulate, bodyBreath, flowBend);
   ctx.fill();
 
 
   if (wingPresence < 0.18) {
     drawClassicFishFins(ctx, finFlap, bodyHueMid);
   } else {
-    const wingDrift = Math.sin(swimT * (4.4 + audioInfluence * 2.2)) * (0.8 + finMorph * 1.4);
-    const wingAlpha = 0.35 + wingPresence * 0.65;
+    const wingDrift = Math.sin(swimT * (3.8 + audioInfluence * 2.2)) * (1 + finMorph * 1.9 + Math.abs(flowBend) * 0.8);
+    const wingAlpha = 0.38 + wingPresence * 0.62;
 
     drawAudioWings(ctx, {
       finFlap,
@@ -371,6 +438,8 @@ export function drawPoissonPlume(ctx, fish, options = {}) {
     bodyHueTop,
     bodyHueMid,
     bodyHueLow,
+    flow: glide + finMorph,
+    bend: flowBend,
   });
 
   ctx.shadowBlur = 0;
