@@ -115,13 +115,13 @@ function drawAudioWings(ctx, data) {
   const finGradL = ctx.createLinearGradient(0, -2, -wingSpan, wingLength);
   finGradL.addColorStop(
     0,
-    `hsla(${196 + bubbleAudioInfluence * 10}, 92%, 80%, ${(0.66 + finMorph * 0.16) * wingAlpha})`
+    `hsla(0, 0%, 100%, ${(0.72 + finMorph * 0.14) * wingAlpha})`
   );
   finGradL.addColorStop(
-    0.52,
-    `hsla(${216 + bubbleAudioInfluence * 8}, 94%, 68%, ${(0.55 + finMorph * 0.2) * wingAlpha})`
+    0.58,
+    `hsla(${16 + bubbleAudioInfluence * 6}, 94%, 83%, ${(0.32 + finMorph * 0.2) * wingAlpha})`
   );
-  finGradL.addColorStop(1, `hsla(${328 + finMorph * 12}, 96%, 72%, 0)`);
+  finGradL.addColorStop(1, `hsla(${28 + finMorph * 8}, 96%, 70%, 0.06)`);
 
   ctx.fillStyle = finGradL;
   ctx.shadowColor = "transparent";
@@ -146,7 +146,7 @@ function drawAudioWings(ctx, data) {
   );
   ctx.fill();
 
-  ctx.strokeStyle = `hsla(${208 + bubbleAudioInfluence * 10}, 88%, 88%, ${0.1 * wingAlpha})`;
+  ctx.strokeStyle = `hsla(${18 + bubbleAudioInfluence * 4}, 88%, 78%, ${0.16 * wingAlpha})`;
   ctx.lineWidth = 0.6;
   for (let i = 0; i < 4; i += 1) {
     const t = (i + 1) / 5;
@@ -170,13 +170,13 @@ function drawAudioWings(ctx, data) {
   const finGradR = ctx.createLinearGradient(0, -2, wingSpan, wingLength);
   finGradR.addColorStop(
     0,
-    `hsla(${196 + bubbleAudioInfluence * 10}, 92%, 80%, ${(0.66 + finMorph * 0.16) * wingAlpha})`
+    `hsla(0, 0%, 100%, ${(0.72 + finMorph * 0.14) * wingAlpha})`
   );
   finGradR.addColorStop(
-    0.52,
-    `hsla(${216 + bubbleAudioInfluence * 8}, 94%, 68%, ${(0.55 + finMorph * 0.2) * wingAlpha})`
+    0.58,
+    `hsla(${16 + bubbleAudioInfluence * 6}, 94%, 83%, ${(0.32 + finMorph * 0.2) * wingAlpha})`
   );
-  finGradR.addColorStop(1, `hsla(${328 + finMorph * 12}, 96%, 72%, 0)`);
+  finGradR.addColorStop(1, `hsla(${28 + finMorph * 8}, 96%, 70%, 0.06)`);
 
   ctx.fillStyle = finGradR;
   ctx.shadowColor = "transparent";
@@ -201,7 +201,7 @@ function drawAudioWings(ctx, data) {
   );
   ctx.fill();
 
-  ctx.strokeStyle = `hsla(${208 + bubbleAudioInfluence * 10}, 88%, 88%, ${0.1 * wingAlpha})`;
+  ctx.strokeStyle = `hsla(${18 + bubbleAudioInfluence * 4}, 88%, 78%, ${0.16 * wingAlpha})`;
   ctx.lineWidth = 0.6;
   for (let i = 0; i < 4; i += 1) {
     const t = (i + 1) / 5;
@@ -231,8 +231,9 @@ function drawTail(ctx, data) {
   ctx.shadowColor = "transparent";
 
   const tailGrad = ctx.createLinearGradient(0, 0, 0, 26);
-  tailGrad.addColorStop(0, `hsla(${bodyHueMid}, 84%, 80%, 0.92)`);
-  tailGrad.addColorStop(1, `hsla(${bodyHueLow + 10}, 80%, 74%, 0)`);
+  tailGrad.addColorStop(0, `hsla(0, 0%, 100%, 0.92)`);
+  tailGrad.addColorStop(0.62, `hsla(14, 94%, 85%, 0.44)`);
+  tailGrad.addColorStop(1, `hsla(28, 94%, 72%, 0)`);
 
   ctx.fillStyle = tailGrad;
 
@@ -246,8 +247,8 @@ function drawTail(ctx, data) {
   ctx.fill();
 
   const tipGrad = ctx.createLinearGradient(0, 18, -6, 36);
-  tipGrad.addColorStop(0, `hsla(${bodyHueTop}, 90%, 90%, 0.65)`);
-  tipGrad.addColorStop(1, `hsla(${bodyHueTop + 8}, 88%, 94%, 0)`);
+  tipGrad.addColorStop(0, `hsla(10, 98%, 90%, 0.68)`);
+  tipGrad.addColorStop(1, `hsla(26, 96%, 74%, 0)`);
 
   ctx.fillStyle = tipGrad;
   ctx.beginPath();
@@ -257,8 +258,8 @@ function drawTail(ctx, data) {
   ctx.fill();
 
   const tipGrad2 = ctx.createLinearGradient(0, 18, 6, 36);
-  tipGrad2.addColorStop(0, `hsla(${bodyHueTop}, 90%, 90%, 0.65)`);
-  tipGrad2.addColorStop(1, `hsla(${bodyHueTop + 8}, 88%, 94%, 0)`);
+  tipGrad2.addColorStop(0, `hsla(10, 98%, 90%, 0.68)`);
+  tipGrad2.addColorStop(1, `hsla(26, 96%, 74%, 0)`);
 
   ctx.fillStyle = tipGrad2;
   ctx.beginPath();
@@ -388,9 +389,9 @@ export function drawPoissonPlume(ctx, fish, options = {}) {
 
   const bodyUndulate = Math.sin(swimT * 5) * (0.04 + glide * 0.06);
 
-  const bodyHueTop = 186 + Math.sin(swimT * 1.7) * 8;
-  const bodyHueMid = 198 + Math.sin(swimT * 1.3 + 1.4) * 12;
-  const bodyHueLow = 210 + Math.sin(swimT * 1.9 + 2.1) * 10;
+  const bodyHueTop = 12 + Math.sin(swimT * 1.4) * 3;
+  const bodyHueMid = 18 + Math.sin(swimT * 1.1 + 1.1) * 4;
+  const bodyHueLow = 24 + Math.sin(swimT * 1.5 + 1.8) * 4;
 
   ctx.save();
 
@@ -407,10 +408,10 @@ export function drawPoissonPlume(ctx, fish, options = {}) {
   ctx.shadowColor = "transparent";
 
   const bodyGrad = ctx.createLinearGradient(-10, -18, 10, 24);
-  bodyGrad.addColorStop(0, `hsla(${bodyHueTop}, 90%, 95%, ${0.88 + shimmerPulse * 0.12})`);
-  bodyGrad.addColorStop(0.38, `hsla(${bodyHueMid}, 85%, 80%, ${0.78 + shimmerPulse * 0.12})`);
-  bodyGrad.addColorStop(0.72, `hsla(${bodyHueLow}, 80%, 68%, ${0.76 + shimmerPulse * 0.14})`);
-  bodyGrad.addColorStop(1, `hsla(${bodyHueLow + 14}, 75%, 58%, 0.8)`);
+  bodyGrad.addColorStop(0, `hsla(0, 0%, 100%, ${0.9 + shimmerPulse * 0.08})`);
+  bodyGrad.addColorStop(0.4, `hsla(0, 0%, 98%, ${0.83 + shimmerPulse * 0.1})`);
+  bodyGrad.addColorStop(0.78, `hsla(${bodyHueMid}, 92%, 90%, ${0.58 + shimmerPulse * 0.12})`);
+  bodyGrad.addColorStop(1, `hsla(${bodyHueLow}, 92%, 80%, 0.42)`);
 
   ctx.fillStyle = bodyGrad;
   traceFishBodyPath(ctx, bodyUndulate, bodyBreath, flowBend);
