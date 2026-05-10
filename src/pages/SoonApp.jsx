@@ -93,6 +93,7 @@ export default function SoonApp({ onBack }) {
         selectedBubbleId={selectedBubbleId}
         onSelectBubble={selectBubble}
         onSelectFish={selectFish}
+        onUpdateFishDepth={updateFishDepth}
         traceCircuit={traceCircuit}
         selectedBeaconId={selectedBeaconId}
         circuitAutopilot={circuitAutopilot}
@@ -102,6 +103,7 @@ export default function SoonApp({ onBack }) {
         fpvMode={fpvMode}
         onFishTarget={setFishTarget}
         onTickFish={() => tickFish({ swimSpeed })}
+        onMoveBubble={(id, patch) => updateBubble(id, patch)}
       />
 
       {/* COCKPIT */}
