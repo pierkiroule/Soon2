@@ -441,14 +441,19 @@ function findBubbleAt(point) {
       const isHeadCollision = fishDepth === bubbleDepth && headToBubble <= collisionRadius;
 
       if (isHeadCollision) {
-        const pushX = ((bubble.x || 0) - mouthX) / Math.max(0.001, headToBubble || 1);
-        const pushY = ((bubble.y || 0) - mouthY) / Math.max(0.001, headToBubble || 1);
+        const nx = ((bubble.x || 0) - mouthX) / Math.max(0.001, headToBubble || 1);
+        const ny = ((bubble.y || 0) - mouthY) / Math.max(0.001, headToBubble || 1);
+        const overlap = Math.max(0, collisionRadius - headToBubble);
         const fishSpeed = Math.hypot(fish.vx || 0, fish.vy || 0);
-        const pushForce = 4 + Math.min(10, fishSpeed * 1.6);
+        const glidePush = 2.8 + Math.min(9, fishSpeed * 1.5);
+        const separatePush = overlap + 1.2;
+        const pushForce = Math.max(glidePush, separatePush);
 
         onMoveBubble?.(bubble.id, {
-          x: (bubble.x || 0) + pushX * pushForce,
-          y: (bubble.y || 0) + pushY * pushForce,
+          // Anti-traversée : on remet la bulle devant la tête, puis on ajoute
+          // un petit élan (comme un dauphin qui pousse un ballon).
+          x: mouthX + nx * (collisionRadius + pushForce),
+          y: mouthY + ny * (collisionRadius + pushForce),
         });
       }
 
