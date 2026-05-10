@@ -434,6 +434,23 @@ function findBubbleAt(point) {
       const fishDepth = Math.max(1, Math.min(3, Math.round(fish.depth || 1)));
       const bubbleDepth = Math.max(1, Math.min(3, Math.round(bubble.depth || 1)));
       const isNear = d <= triggerRadius && fishDepth === bubbleDepth;
+      const mouthX = (fish.x || 0) + Math.cos(fish.angle || 0) * 32;
+      const mouthY = (fish.y || 0) + Math.sin(fish.angle || 0) * 32;
+      const headToBubble = Math.hypot((bubble.x || 0) - mouthX, (bubble.y || 0) - mouthY);
+      const collisionRadius = Math.max(18, (bubble.r || 70) * 0.42);
+      const isHeadCollision = fishDepth === bubbleDepth && headToBubble <= collisionRadius;
+
+      if (isHeadCollision) {
+        const pushX = ((bubble.x || 0) - mouthX) / Math.max(0.001, headToBubble || 1);
+        const pushY = ((bubble.y || 0) - mouthY) / Math.max(0.001, headToBubble || 1);
+        const fishSpeed = Math.hypot(fish.vx || 0, fish.vy || 0);
+        const pushForce = 4 + Math.min(10, fishSpeed * 1.6);
+
+        onMoveBubble?.(bubble.id, {
+          x: (bubble.x || 0) + pushX * pushForce,
+          y: (bubble.y || 0) + pushY * pushForce,
+        });
+      }
 
       if (isNear) {
         activeNow.add(bubble.id);
