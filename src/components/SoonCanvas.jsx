@@ -46,6 +46,7 @@ export default function SoonCanvas({
   onTickFish,
   onSelectBubble,
   onSelectFish,
+  onUpdateFishDepth,
   onSelectBeacon,
   onMoveBeacon,
   onMoveBubble,
@@ -70,6 +71,8 @@ export default function SoonCanvas({
     dragBubbleId: null,
     lastTapAt: 0,
     lastTapPos: null,
+    fishLongPressTimer: null,
+    fishLongPressTriggered: false,
   });
 
   const stateRef = useRef({
@@ -252,12 +255,29 @@ function findBubbleAt(point) {
     const point = getSafeWorldFromEvent(event);
     const current = stateRef.current;
     const hit = findBubbleAt(point);
+    const fishHit = isFishHit(point, current.fish);
     const beaconHit = current.mode === "reso" ? findBeaconAt(point) : null;
 
     pointerRef.current.down = true;
     pointerRef.current.pointerId = event.pointerId;
     pointerRef.current.dragBubbleId = null;
     pointerRef.current.dragBeaconId = null;
+    pointerRef.current.fishLongPressTriggered = false;
+
+    if (fishHit) {
+      pointerRef.current.fishLongPressTimer = window.setTimeout(() => {
+        pointerRef.current.fishLongPressTriggered = true;
+        onSelectFish?.();
+        const raw = window.prompt(
+          "Profondeur du poisson (1: surface, 2: milieu, 3: profond)",
+          String(current.fish?.depth || 1)
+        );
+        const nextDepth = Number(raw);
+        if ([1, 2, 3].includes(nextDepth)) {
+          onUpdateFishDepth?.(nextDepth);
+        }
+      }, 520);
+    }
 
     if (beaconHit) {
       onSelectBeacon(beaconHit.id);
@@ -313,6 +333,7 @@ function findBubbleAt(point) {
 
   function handlePointerMove(event) {
     if (!pointerRef.current.down) return;
+    if (pointerRef.current.fishLongPressTriggered) return;
 
     const point = getSafeWorldFromEvent(event);
     const current = stateRef.current;
@@ -338,6 +359,10 @@ function findBubbleAt(point) {
   }
 
   function handlePointerUp(event) {
+    if (pointerRef.current.fishLongPressTimer) {
+      clearTimeout(pointerRef.current.fishLongPressTimer);
+      pointerRef.current.fishLongPressTimer = null;
+    }
     pointerRef.current.down = false;
     pointerRef.current.pointerId = null;
     pointerRef.current.dragBubbleId = null;
@@ -406,7 +431,9 @@ function findBubbleAt(point) {
       const d = Math.hypot(dx, dy);
 
       const triggerRadius = (bubble.r || 70) + 85;
-      const isNear = d <= triggerRadius;
+      const fishDepth = Math.max(1, Math.min(3, Math.round(fish.depth || 1)));
+      const bubbleDepth = Math.max(1, Math.min(3, Math.round(bubble.depth || 1)));
+      const isNear = d <= triggerRadius && fishDepth === bubbleDepth;
 
       if (isNear) {
         activeNow.add(bubble.id);
@@ -735,9 +762,12 @@ function findBubbleAt(point) {
     bubbles.forEach((bubble) => {
       const selected = bubble.id === selectedBubbleId;
       const pulse = Math.sin(time * 0.003 + bubble.x * 0.01) * 5;
-      const depthScale = 0.82 + bubble.depth * 0.12;
+      const depth = Math.max(1, Math.min(3, Math.round(bubble.depth || 1)));
+      const depthScale = depth === 1 ? 1 : depth === 2 ? 0.86 : 0.72;
       const radius = bubble.r * depthScale;
-      const alpha = 0.34 + bubble.depth * 0.12;
+      const alpha = depth === 1 ? 0.56 : depth === 2 ? 0.42 : 0.3;
+      const blur = depth === 1 ? 0 : depth === 2 ? 3 : 7;
+      const lightness = depth === 1 ? 66 : depth === 2 ? 54 : 42;
 
       const glow = ctx.createRadialGradient(
         bubble.x,
@@ -748,8 +778,8 @@ function findBubbleAt(point) {
         radius * 1.7
       );
 
-      glow.addColorStop(0, `hsla(${bubble.hue}, 100%, 74%, ${alpha})`);
-      glow.addColorStop(1, `hsla(${bubble.hue}, 100%, 60%, 0)`);
+      glow.addColorStop(0, `hsla(${bubble.hue}, 100%, ${lightness + 8}%, ${alpha})`);
+      glow.addColorStop(1, `hsla(${bubble.hue}, 100%, ${lightness - 8}%, 0)`);
 
       ctx.beginPath();
       ctx.arc(bubble.x, bubble.y, radius * 1.7 + pulse, 0, Math.PI * 2);
@@ -758,8 +788,10 @@ function findBubbleAt(point) {
 
       ctx.beginPath();
       ctx.arc(bubble.x, bubble.y, radius + pulse, 0, Math.PI * 2);
-      ctx.fillStyle = `hsla(${bubble.hue}, 90%, 66%, ${alpha})`;
+      ctx.filter = `blur(${blur}px)`;
+      ctx.fillStyle = `hsla(${bubble.hue}, 90%, ${lightness}%, ${alpha})`;
       ctx.fill();
+      ctx.filter = "none";
 
       ctx.beginPath();
       ctx.arc(bubble.x, bubble.y, radius + 12 + pulse, 0, Math.PI * 2);

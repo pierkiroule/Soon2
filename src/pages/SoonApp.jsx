@@ -93,6 +93,7 @@ export default function SoonApp({ onBack }) {
         selectedBubbleId={selectedBubbleId}
         onSelectBubble={selectBubble}
         onSelectFish={selectFish}
+        onUpdateFishDepth={updateFishDepth}
         traceCircuit={traceCircuit}
         selectedBeaconId={selectedBeaconId}
         circuitAutopilot={circuitAutopilot}

@@ -216,8 +216,28 @@ export const useSoonStore = create((set, get) => ({
   selectBubble: (id) => {
     set({
       selectedBubbleId: id,
+      selectedFish: false,
       selectedBeaconId: null,
     });
+  },
+
+  selectFish: () => {
+    set({
+      selectedFish: true,
+      selectedBubbleId: null,
+      selectedBeaconId: null,
+    });
+  },
+
+  updateFishDepth: (depth) => {
+    const nextDepth = Math.max(1, Math.min(3, Math.round(depth || 1)));
+    set((state) => ({
+      fish: {
+        ...state.fish,
+        depth: nextDepth,
+      },
+    }));
+    saveState(get());
   },
 
   selectBeacon: (id) => {
@@ -351,6 +371,10 @@ export const useSoonStore = create((set, get) => ({
         if (bubble.id !== id) return bubble;
 
         const next = { ...bubble, ...patch };
+
+        if ("depth" in patch) {
+          next.depth = Math.max(1, Math.min(3, Math.round(next.depth || 1)));
+        }
 
         if ("x" in patch || "y" in patch) {
           const safe = clampToCircle(
