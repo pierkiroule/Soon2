@@ -103,6 +103,7 @@ export default function SoonApp({ onBack }) {
         fpvMode={fpvMode}
         onFishTarget={setFishTarget}
         onTickFish={() => tickFish({ swimSpeed })}
+        onMoveBubble={(id, patch) => updateBubble(id, patch)}
       />
 
       {/* COCKPIT */}
