@@ -7,43 +7,43 @@ function traceFishBodyPath(ctx, bodyUndulate = 0, bodyBreath = 0, bend = 0) {
   const br = safeNumber(bodyBreath, 0);
   const curve = Math.max(-1, Math.min(1, safeNumber(bend, 0)));
 
-  const headWidth = 12.8 + br * 0.6;
+  const headWidth = 10.9 + br * 0.4;
   const cheekLift = 1.8 + Math.abs(curve) * 1.2;
   const bodyShift = curve * 5.8;
 
   ctx.beginPath();
-  ctx.moveTo(bodyShift * 0.12, -25.5);
+  ctx.moveTo(bodyShift * 0.12, -27.5);
   ctx.bezierCurveTo(
     headWidth + bodyShift * 0.4,
     -23 + cheekLift,
-    16 + br * 0.6 + bodyShift,
-    -7,
-    11.8 + bodyShift * 0.82,
-    6.2
+    13.2 + br * 0.45 + bodyShift,
+    -10.2,
+    9.3 + bodyShift * 0.84,
+    8.8
   );
   ctx.bezierCurveTo(
-    8.5 + bodyShift * 0.9,
-    18.5,
-    3 + bodyShift * 0.72,
-    28.5,
+    6.4 + bodyShift * 0.9,
+    22.8,
+    2.1 + bodyShift * 0.72,
+    33.5,
     bodyShift * 0.35,
-    31.8
+    36.8
   );
   ctx.bezierCurveTo(
-    -3 + bodyShift * 0.28,
-    28.5,
-    -8.5 + bodyShift * 0.1,
-    18.5,
-    -11.8 + bodyShift * 0.18,
-    6.2
+    -2.1 + bodyShift * 0.28,
+    33.5,
+    -6.4 + bodyShift * 0.1,
+    22.8,
+    -9.3 + bodyShift * 0.18,
+    8.8
   );
   ctx.bezierCurveTo(
-    -16 + br * 0.6 + bodyShift * 0.05,
-    -7,
+    -13.2 + br * 0.45 + bodyShift * 0.05,
+    -10.2,
     -headWidth + bodyShift * 0.04,
     -23 + cheekLift,
     bodyShift * 0.12,
-    -25.5
+    -27.5
   );
   ctx.closePath();
 }
@@ -101,8 +101,8 @@ function drawAudioWings(ctx, data) {
     bubbleAudioInfluence,
   } = data;
 
-  const wingSpan = 12 + finMorph * 22;
-  const wingLength = 15 + finMorph * 30;
+  const wingSpan = 14 + finMorph * 26;
+  const wingLength = 20 + finMorph * 34;
 
   ctx.save();
   ctx.shadowBlur = 0;
@@ -118,10 +118,10 @@ function drawAudioWings(ctx, data) {
     `hsla(0, 0%, 100%, ${(0.72 + finMorph * 0.14) * wingAlpha})`
   );
   finGradL.addColorStop(
-    0.58,
-    `hsla(${16 + bubbleAudioInfluence * 6}, 94%, 83%, ${(0.32 + finMorph * 0.2) * wingAlpha})`
+    0.54,
+    `hsla(${208 + bubbleAudioInfluence * 10}, 88%, 86%, ${(0.36 + finMorph * 0.2) * wingAlpha})`
   );
-  finGradL.addColorStop(1, `hsla(${28 + finMorph * 8}, 96%, 70%, 0.06)`);
+  finGradL.addColorStop(1, `hsla(${324 + finMorph * 10}, 96%, 76%, 0.26)`);
 
   ctx.fillStyle = finGradL;
   ctx.shadowColor = "transparent";
@@ -146,7 +146,7 @@ function drawAudioWings(ctx, data) {
   );
   ctx.fill();
 
-  ctx.strokeStyle = `hsla(${18 + bubbleAudioInfluence * 4}, 88%, 78%, ${0.16 * wingAlpha})`;
+  ctx.strokeStyle = `hsla(${300 + bubbleAudioInfluence * 6}, 84%, 80%, ${0.2 * wingAlpha})`;
   ctx.lineWidth = 0.6;
   for (let i = 0; i < 4; i += 1) {
     const t = (i + 1) / 5;
@@ -174,9 +174,9 @@ function drawAudioWings(ctx, data) {
   );
   finGradR.addColorStop(
     0.58,
-    `hsla(${16 + bubbleAudioInfluence * 6}, 94%, 83%, ${(0.32 + finMorph * 0.2) * wingAlpha})`
+    `hsla(${208 + bubbleAudioInfluence * 10}, 88%, 86%, ${(0.36 + finMorph * 0.2) * wingAlpha})`
   );
-  finGradR.addColorStop(1, `hsla(${28 + finMorph * 8}, 96%, 70%, 0.06)`);
+  finGradR.addColorStop(1, `hsla(${324 + finMorph * 10}, 96%, 76%, 0.26)`);
 
   ctx.fillStyle = finGradR;
   ctx.shadowColor = "transparent";
@@ -201,7 +201,7 @@ function drawAudioWings(ctx, data) {
   );
   ctx.fill();
 
-  ctx.strokeStyle = `hsla(${18 + bubbleAudioInfluence * 4}, 88%, 78%, ${0.16 * wingAlpha})`;
+  ctx.strokeStyle = `hsla(${300 + bubbleAudioInfluence * 6}, 84%, 80%, ${0.2 * wingAlpha})`;
   ctx.lineWidth = 0.6;
   for (let i = 0; i < 4; i += 1) {
     const t = (i + 1) / 5;
@@ -232,40 +232,40 @@ function drawTail(ctx, data) {
 
   const tailGrad = ctx.createLinearGradient(0, 0, 0, 26);
   tailGrad.addColorStop(0, `hsla(0, 0%, 100%, 0.92)`);
-  tailGrad.addColorStop(0.62, `hsla(14, 94%, 85%, 0.44)`);
-  tailGrad.addColorStop(1, `hsla(28, 94%, 72%, 0)`);
+  tailGrad.addColorStop(0.62, `hsla(210, 86%, 88%, 0.46)`);
+  tailGrad.addColorStop(1, `hsla(320, 94%, 76%, 0.08)`);
 
   ctx.fillStyle = tailGrad;
 
-  const plumeSpread = 1 + Math.max(0, flow) * 0.18;
+  const plumeSpread = 1.18 + Math.max(0, flow) * 0.24;
 
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  ctx.bezierCurveTo(-8.2 * plumeSpread, 4, -10.8 * plumeSpread, 13.5, -4.4 * plumeSpread, 23.5);
-  ctx.quadraticCurveTo(0, 19.5, 4.4 * plumeSpread, 23.5);
-  ctx.bezierCurveTo(10.8 * plumeSpread, 13.5, 8.2 * plumeSpread, 4, 0, 0);
+  ctx.bezierCurveTo(-9.4 * plumeSpread, 3.5, -14.5 * plumeSpread, 15.8, -6.2 * plumeSpread, 27);
+  ctx.quadraticCurveTo(0, 22.2, 6.2 * plumeSpread, 27);
+  ctx.bezierCurveTo(14.5 * plumeSpread, 15.8, 9.4 * plumeSpread, 3.5, 0, 0);
   ctx.fill();
 
   const tipGrad = ctx.createLinearGradient(0, 18, -6, 36);
-  tipGrad.addColorStop(0, `hsla(10, 98%, 90%, 0.68)`);
-  tipGrad.addColorStop(1, `hsla(26, 96%, 74%, 0)`);
+  tipGrad.addColorStop(0, `hsla(206, 92%, 86%, 0.68)`);
+  tipGrad.addColorStop(1, `hsla(322, 96%, 74%, 0)`);
 
   ctx.fillStyle = tipGrad;
   ctx.beginPath();
-  ctx.moveTo(-1.5, 18);
-  ctx.bezierCurveTo(-5, 23, -8, 31, -4.5, 36);
-  ctx.quadraticCurveTo(-2, 30, -1.5, 18);
+  ctx.moveTo(-2.2, 20);
+  ctx.bezierCurveTo(-7, 26, -11.2, 36, -6.1, 42);
+  ctx.quadraticCurveTo(-2.4, 34.2, -2.2, 20);
   ctx.fill();
 
   const tipGrad2 = ctx.createLinearGradient(0, 18, 6, 36);
-  tipGrad2.addColorStop(0, `hsla(10, 98%, 90%, 0.68)`);
-  tipGrad2.addColorStop(1, `hsla(26, 96%, 74%, 0)`);
+  tipGrad2.addColorStop(0, `hsla(206, 92%, 86%, 0.68)`);
+  tipGrad2.addColorStop(1, `hsla(322, 96%, 74%, 0)`);
 
   ctx.fillStyle = tipGrad2;
   ctx.beginPath();
-  ctx.moveTo(1.5, 18);
-  ctx.bezierCurveTo(5, 23, 8, 31, 4.5, 36);
-  ctx.quadraticCurveTo(2, 30, 1.5, 18);
+  ctx.moveTo(2.2, 20);
+  ctx.bezierCurveTo(7, 26, 11.2, 36, 6.1, 42);
+  ctx.quadraticCurveTo(2.4, 34.2, 2.2, 20);
   ctx.fill();
 
   ctx.restore();
